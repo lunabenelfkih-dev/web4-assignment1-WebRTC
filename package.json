@@ -1,0 +1,13 @@
+{
+    "name": "web4-assignment1-webrtc",
+    "version": "1.0.0",
+    "description": "WebRTC data channels with WebSocket signalling",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "socket.io": "^4.7.4"
+    }
+}

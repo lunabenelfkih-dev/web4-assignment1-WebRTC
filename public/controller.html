@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Controller</title>
+</head>
+
+<body>
+    <h1>WebRTC Controller</h1>
+
+    <p>Status: <span id="status">Connecting to server…</span></p>
+    <p>WebRTC: <span id="rtcStatus">Idle</span></p>
+
+    <p id="instructions" style="display:none">
+        Move your mouse or drag your finger across the page to control the ball on the desktop.
+    </p>
+
+    <!-- Touch-friendly move area -->
+    <div id="moveArea" style="
+    width: 100%;
+    height: 60vh;
+    border: 2px dashed #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  ">
+        <p style="color:#aaa; pointer-events:none">Move / drag here</p>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const $status = document.getElementById('status');
+        const $rtcStatus = document.getElementById('rtcStatus');
+        const $instructions = document.getElementById('instructions');
+        const $moveArea = document.getElementById('moveArea');
+
+        let socket;
+        let pc;          // RTCPeerConnection
+        let dataChannel; // RTCDataChannel
+        let targetSocketId;
+
+        // ── ICE configuration ─────────────────────────────────────────────────────
+        const RTC_CONFIG = {
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        };
+
+        // ── URL query-string helper ───────────────────────────────────────────────
+        const getUrlParam = name => {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            const results = regex.exec(location.search);
+            return results === null ? false : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        };
+
+        // ── Send control data via the data channel ────────────────────────────────
+        const sendPosition = (clientX, clientY) => {
+            if (!dataChannel || dataChannel.readyState !== 'open') return;
+            dataChannel.send(JSON.stringify({
+                x: clientX / window.innerWidth,
+                y: clientY / window.innerHeight
+            }));
+        }
+
+        // ── WebRTC setup (controller is the "offerer") ────────────────────────────
+        const startWebRTC = async () => {
+            pc = new RTCPeerConnection(RTC_CONFIG);
+            $rtcStatus.textContent = 'Peer connection created';
+
+            // Create the data channel — this is what carries the actual controls
+            dataChannel = pc.createDataChannel('controls');
+
+            dataChannel.onopen = () => {
+                $rtcStatus.textContent = 'Data channel open — send control input!';
+                $instructions.style.display = 'block';
+            };
+
+            dataChannel.onclose = () => {
+                $rtcStatus.textContent = 'Data channel closed';
+                $instructions.style.display = 'none';
+            };
+
+            // Forward our ICE candidates to the desktop via socket.io
+            pc.onicecandidate = ({ candidate }) => {
+                if (candidate) {
+                    socket.emit('signal', targetSocketId, { type: 'candidate', candidate });
+                }
+            };
+
+            pc.onconnectionstatechange = () => {
+                $rtcStatus.textContent = `WebRTC: ${pc.connectionState}`;
+            };
+
+            // Create and send the offer
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            socket.emit('signal', targetSocketId, { type: 'offer', sdp: offer.sdp });
+            $rtcStatus.textContent = 'Offer sent — waiting for answer…';
+        }
+
+        // ── Main init ─────────────────────────────────────────────────────────────
+        const init = () => {
+            targetSocketId = getUrlParam('id');
+
+            if (!targetSocketId) {
+                alert('Missing target desktop ID in the URL.\nExample: /controller.html?id=<desktop-socket-id>');
+                return;
+            }
+
+            socket = io.connect('/');
+
+            socket.on('connect', () => {
+                $status.textContent = `Connected (${socket.id})`;
+                // Start WebRTC negotiation as soon as we have a socket connection
+                startWebRTC();
+            });
+
+            socket.on('disconnect', () => {
+                $status.textContent = 'Disconnected';
+            });
+
+            // Receive signalling replies from the desktop
+            socket.on('signal', async (remoteSocketId, data) => {
+                if (data.type === 'answer') {
+                    await pc.setRemoteDescription(new RTCSessionDescription(data));
+                    $rtcStatus.textContent = 'Answer received — establishing connection…';
+
+                } else if (data.type === 'candidate') {
+                    try {
+                        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    } catch (e) {
+                        console.warn('ICE candidate error:', e);
+                    }
+                }
+            });
+
+            // ── Input events — use the move area for mouse and touch ─────────────────
+            $moveArea.addEventListener('mousemove', e => {
+                sendPosition(e.clientX, e.clientY);
+            });
+
+            $moveArea.addEventListener('touchmove', e => {
+                e.preventDefault();
+                const t = e.touches[0];
+                sendPosition(t.clientX, t.clientY);
+            }, { passive: false });
+        };
+
+        init();
+    </script>
+</body>
+
+</html>
