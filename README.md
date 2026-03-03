@@ -86,6 +86,8 @@ const requestGyroPermission = () => {
 $enableGyro.addEventListener('click', requestGyroPermission);
 ```
 
+```js
+
     cert: fs.readFileSync('cert.pem')
 }, app);
 const { Server } = require('socket.io');
