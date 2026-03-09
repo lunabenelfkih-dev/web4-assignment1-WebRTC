@@ -16,19 +16,6 @@
             justify-content: center;
         }
 
-        .cursor {
-            position: absolute;
-            width: 2rem;
-            height: 2rem;
-            margin-left: -1rem;
-            margin-top: -1rem;
-            background: royalblue;
-            border-radius: 50%;
-            transition: top .1s, left .1s;
-            pointer-events: none;
-            z-index: 1000;
-        }
-
         #info {
             position: relative;
             z-index: 10;
@@ -52,110 +39,19 @@
         <div>Controller URL: <span id="url">...</span></div>
         <div id="qr"></div>
     </div>
-    <div class="cursor" id="cursor"></div>
 
+    <div id="ui">
+        <div id="status">Waiting for connection...</div>
+        <div id="id-display"></div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Single socket.io import — game.js handles all WebRTC logic -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-    <script>
-        const $cursor = document.getElementById('cursor');
-        const $socketId = document.getElementById('socketId');
-        const $rtcStatus = document.getElementById('rtcStatus');
-        const $url = document.getElementById('url');
-        const $qr = document.getElementById('qr');
+    <!-- game.js handles socket.io, WebRTC signalling, QR display, and the game loop -->
+    <script src="js/game.js" defer></script>
 
-        let socket;
-        let pc; // RTCPeerConnection
-
-        // ── ICE configuration (STUN only, for local/LAN use) ──────────────────────
-        const RTC_CONFIG = {
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-        };
-
-        const updateCursor = data => {
-            $cursor.style.left = `${data.x * window.innerWidth}px`;
-            $cursor.style.top = `${data.y * window.innerHeight}px`;
-        };
-
-        const showControllerUrl = (id) => {
-            const url = new URL(`/controller.html?id=${id}`, window.location);
-            $url.textContent = url;
-            const typeNumber = 4;
-            const errorCorrectionLevel = 'L';
-            const qr = qrcode(typeNumber, errorCorrectionLevel);
-            qr.addData(url.toString());
-            qr.make();
-            $qr.innerHTML = qr.createImgTag(4);
-        };
-
-        // ── WebRTC setup (desktop is the "answerer") ──────────────────────────────
-        const setupPeerConnection = (remoteSocketId) => {
-            pc = new RTCPeerConnection(RTC_CONFIG);
-            $rtcStatus.textContent = 'Peer connection created';
-
-            // When we generate ICE candidates, forward them via socket.io
-            pc.onicecandidate = ({ candidate }) => {
-                if (candidate) {
-                    socket.emit('signal', remoteSocketId, { type: 'candidate', candidate });
-                }
-            };
-
-            pc.onconnectionstatechange = () => {
-                $rtcStatus.textContent = `WebRTC: ${pc.connectionState}`;
-            };
-
-            // The controller creates the data channel; we receive it here
-            pc.ondatachannel = ({ channel }) => {
-                $rtcStatus.textContent = 'Data channel received';
-
-                channel.onopen = () => {
-                    $rtcStatus.textContent = 'Data channel open — ready for input!';
-                };
-
-                channel.onmessage = ({ data }) => {
-                    updateCursor(JSON.parse(data));
-                };
-
-                channel.onclose = () => {
-                    $rtcStatus.textContent = 'Data channel closed';
-                };
-            };
-        };
-
-        // ── Main init ─────────────────────────────────────────────────────────────
-        const init = () => {
-            socket = io.connect('/');
-
-            socket.on('connect', () => {
-                $socketId.textContent = socket.id;
-                showControllerUrl(socket.id);
-            });
-
-            // Receive signalling messages from the controller
-            socket.on('signal', async (remoteSocketId, data) => {
-                // First signal from a controller — create the peer connection
-                if (!pc) {
-                    setupPeerConnection(remoteSocketId);
-                }
-
-                if (data.type === 'offer') {
-                    $rtcStatus.textContent = 'Received offer — creating answer…';
-                    await pc.setRemoteDescription(new RTCSessionDescription(data));
-                    const answer = await pc.createAnswer();
-                    await pc.setLocalDescription(answer);
-                    socket.emit('signal', remoteSocketId, { type: 'answer', sdp: answer.sdp });
-
-                } else if (data.type === 'candidate') {
-                    try {
-                        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-                    } catch (e) {
-                        console.warn('ICE candidate error:', e);
-                    }
-                }
-            });
-        };
-
-        init();
-    </script>
 </body>
 
 </html>
