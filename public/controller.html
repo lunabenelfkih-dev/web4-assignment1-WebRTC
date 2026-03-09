@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Controller</title>
+</head>
+
+<body>
+    <h1>WebRTC Controller</h1>
+
+    <p>Status: <span id="status">Connecting to server…</span></p>
+    <p>WebRTC: <span id="rtcStatus">Idle</span></p>
+
+    <p id="instructions" style="display:none">
+        Tilt your phone left/right and forward/back to move the ball.
+    </p>
+
+    <!-- iOS 13+ requires a user gesture to grant DeviceOrientation permission -->
+    <button id="enableGyro" style="padding:1rem 2rem; font-size:1.2rem">
+        Tap to enable gyroscope
+    </button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const $status = document.getElementById('status');
+        const $rtcStatus = document.getElementById('rtcStatus');
+        const $instructions = document.getElementById('instructions');
+        const $enableGyro = document.getElementById('enableGyro');
+
+        let socket;
+        let pc;          // RTCPeerConnection
+        let dataChannel; // RTCDataChannel
+        let targetSocketId;
+
+        // ── ICE configuration ─────────────────────────────────────────────────────
+        const RTC_CONFIG = {
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        };
+
+        // ── URL query-string helper ───────────────────────────────────────────────
+        const getUrlParam = name => {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            const results = regex.exec(location.search);
+            return results === null ? false : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        };
+
+        // ── Send control data via the data channel ────────────────────────────────
+        const sendGyro = (gamma, beta) => {
+            if (!dataChannel || dataChannel.readyState !== 'open') return;
+            // gamma: left/right tilt (-90 to 90) → x (0 to 1)
+            // beta:  forward/back tilt (-90 to 90) → y (0 to 1)
+            const x = Math.min(1, Math.max(0, (gamma + 90) / 180));
+            const y = Math.min(1, Math.max(0, (beta + 90) / 180));
+            dataChannel.send(JSON.stringify({ x, y }));
+        };
+
+        // ── WebRTC setup (controller is the "offerer") ────────────────────────────
+        const startWebRTC = async () => {
+            pc = new RTCPeerConnection(RTC_CONFIG);
+            $rtcStatus.textContent = 'Peer connection created';
+
+            // Create the data channel — this is what carries the actual controls
+            dataChannel = pc.createDataChannel('controls');
+
+            dataChannel.onopen = () => {
+                $rtcStatus.textContent = 'Data channel open — tilt to control!';
+                $instructions.style.display = 'block';
+            };
+
+            dataChannel.onclose = () => {
+                $rtcStatus.textContent = 'Data channel closed';
+                $instructions.style.display = 'none';
+            };
+
+            // Forward our ICE candidates to the desktop via socket.io
+            pc.onicecandidate = ({ candidate }) => {
+                if (candidate) {
+                    socket.emit('signal', targetSocketId, { type: 'candidate', candidate });
+                }
+            };
+
+            pc.onconnectionstatechange = () => {
+                $rtcStatus.textContent = `WebRTC: ${pc.connectionState}`;
+            };
+
+            // Create and send the offer
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            socket.emit('signal', targetSocketId, { type: 'offer', sdp: offer.sdp });
+            $rtcStatus.textContent = 'Offer sent — waiting for answer…';
+        }
+
+        // ── Gyroscope input ───────────────────────────────────────────────────────
+        const startGyro = () => {
+            window.addEventListener('deviceorientation', e => {
+                sendGyro(e.gamma, e.beta);
+            });
+            $enableGyro.textContent = 'Gyroscope active ✅';
+            $enableGyro.disabled = true;
+        };
+
+        const requestGyroPermission = () => {
+            if (typeof DeviceOrientationEvent !== 'undefined' &&
+                typeof DeviceOrientationEvent.requestPermission === 'function') {
+                // iOS 13+ requires explicit permission
+                DeviceOrientationEvent.requestPermission()
+                    .then(state => {
+                        if (state === 'granted') startGyro();
+                        else $enableGyro.textContent = 'Permission denied';
+                    })
+                    .catch(console.error);
+            } else {
+                // Android and desktop — no permission needed
+                startGyro();
+            }
+        };
+
+        $enableGyro.addEventListener('click', requestGyroPermission); const init = () => {
+            targetSocketId = getUrlParam('id');
+
+            if (!targetSocketId) {
+                alert('Missing target desktop ID in the URL.\nExample: /controller.html?id=<desktop-socket-id>');
+                return;
+            }
+
+            socket = io.connect('/');
+
+            socket.on('connect', () => {
+                $status.textContent = `Connected (${socket.id})`;
+                // Start WebRTC negotiation as soon as we have a socket connection
+                startWebRTC();
+            });
+
+            socket.on('disconnect', () => {
+                $status.textContent = 'Disconnected';
+            });
+
+            // Receive signalling replies from the desktop
+            socket.on('signal', async (remoteSocketId, data) => {
+                if (data.type === 'answer') {
+                    await pc.setRemoteDescription(new RTCSessionDescription(data));
+                    $rtcStatus.textContent = 'Answer received — establishing connection…';
+
+                } else if (data.type === 'candidate') {
+                    try {
+                        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    } catch (e) {
+                        console.warn('ICE candidate error:', e);
+                    }
+                }
+            });
+
+            // ── Input events replaced by gyroscope (see requestGyroPermission above) ──
+        };
+
+        init();
+    </script>
+</body>
+
+</html>
