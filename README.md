@@ -2,7 +2,7 @@
 
 ## Day 00 - Planning
 
-| Date | Phase | Task Description | Status (✅) |
+| Date | Topic | Description | Status |
 | :--- | :--- | :--- | :---: |
 | **February 28** | **Gyroscope** | Look into how to implement gyroscope logic | ✅ |
 | **March 1** | **Make a ball move** | Make a ball move on the screen with the gyroscope | ✅ |
@@ -10,16 +10,16 @@
 | **March 6** | **Refactor code** | Clean up the code so the game will go easier. | ✅ |
 | **March 8** | **Falling stuff logic** | Start implementing the falling stuff logic | ✅ |
 | **March 10** | **UX & Connection** | Implement `qrcode.js` library in `index.html`. Create a connection overlay in `game.js` that auto-hides once `dataChannel.onopen` is detected. | ✅ |
-| **March 11** | **Memory Mgmt** | Optimize `game.js` update loop to remove bullets (`y < 0`) and meteorites (`y > height`) from arrays to prevent memory leaks and lag. |  |
-| **March 12** | **Core Gameplay** | Implement collision detection math using `Math.hypot()`. Use `.splice()` to destroy meteorites and bullets upon impact. |  |
-| **March 13** | **Scoring System** | Add global `score` state. Render current score to Canvas using `fillText()`. Implement `localStorage` for high score persistence. |  |
-| **March 14** | **Player Health** | Add ship-to-meteorite collision logic. Create a "Game Over" state that stops the loop and restores the connection overlay to restart. |  |
+| **March 11** | **Optimize game js** | Optimize `game.js` |  |
+| **March 12** | **Core Gameplay** | Implement collision detection to destroy meteorites and bullets upon impact. |  |
+| **March 13** | **Scoring System** | Add global `score` state. Render current score to Canvas. |  |
+| **March 14** | **Game over** | Create a "Game Over" state that stops the loop and restores the connection overlay to restart. |  |
 | **March 15** | **Remote Feedback** | Enhance `remote.js` with haptic feedback (vibration) or screen flashes when firing. Add a "Start" button to handle gyro permissions. |  |
 | **March 16** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. |  |
 | **March 17** | **Visual Polish** | Replace primitive circles with `Image()` objects for sprites. Implement a parallax scrolling starfield background in the `draw()` loop. |  |
-| **March 18** | **Optimization** | Integrate the Screen Wake Lock API in `remote.js` to prevent mobile sleep mode. Profile performance for consistent 60 FPS. |  |
-| **March 19** | **Responsiveness** | Add window `resize` listeners to scale the Canvas. Test connection on a local network using the PC's actual IP address instead of localhost. |  |
-| **March 20** | **FINAL DEADLINE** | Final code cleanup: remove all `console.log` statements, verify documentation, and prepare the final project submission. |  |
+| **March 18** | **Optimization** | Optimise where needed. If time, implement sound. |  |
+| **March 19** | **Extra** | Implement extra features if time. For example something with the webcam. |  |
+| **March 22** | **FINAL DEADLINE** | Final code cleanup: remove all `console.log` statements, verify documentation, and prepare the final project submission. |  |
 
 
 ## Day 01 — Concept
