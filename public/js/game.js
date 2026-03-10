@@ -3,40 +3,15 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const $status = document.getElementById('status');
 
-// WebRTC State
-let pc;
-// No STUN needed — phone and PC are on the same LAN
-const RTC_CONFIG = {};
+let peer = null;
 
-/**
- * Resolves when ICE gathering reaches 'complete', or after 3 seconds —
- * whichever comes first. LAN (host) candidates are gathered in <100 ms;
- * the timeout only fires if the browser is waiting on an unreachable STUN server.
- */
-function waitForIceGathering(pc) {
-    return new Promise(resolve => {
-        if (pc.iceGatheringState === 'complete') { resolve(); return; }
-        const timer = setTimeout(resolve, 3000);
-        pc.addEventListener('icegatheringstatechange', () => {
-            if (pc.iceGatheringState === 'complete') {
-                clearTimeout(timer);
-                resolve();
-            }
-        });
-    });
-}
-
-// Game State
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 const ship = { x: canvas.width / 2, y: canvas.height - 80, size: 40 };
 const bullets = [];
 const meteorites = [];
 
-// ── 1. WebRTC Signaling ────────────────────────────────────────────────────────
-
 socket.on('connect', () => {
-    // Update both the game UI and the #info panel
     const $idDisplay = document.getElementById('id-display');
     if ($idDisplay) $idDisplay.textContent = `ID: ${socket.id}`;
 
@@ -46,10 +21,6 @@ socket.on('connect', () => {
     showControllerUrl(socket.id);
 });
 
-/**
- * controller URL and QR code popup
- * Requires the qrcode-generator library to be loaded before game.js.
- */
 function showControllerUrl(id) {
     const $rtcStatus = document.getElementById('rtcStatus');
     const $url = document.getElementById('url');
@@ -67,74 +38,53 @@ function showControllerUrl(id) {
     }
 }
 
-socket.on('signal', async (fromId, data) => {
-    if (!pc) createPeerConnection(fromId);
+socket.on('signal', (fromId, data) => {
+    const $rtcStatus = document.getElementById('rtcStatus');
 
-    if (data.type === 'offer') {
-        const $rtcStatus = document.getElementById('rtcStatus');
-        if ($rtcStatus) $rtcStatus.textContent = 'Offer received — gathering ICE…';
-
-        await pc.setRemoteDescription(new RTCSessionDescription(data));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-
-        // Wait until all our candidates are gathered, then send one complete answer
-        await waitForIceGathering(pc);
-        socket.emit('signal', fromId, pc.localDescription);
-
-        if ($rtcStatus) $rtcStatus.textContent = 'Answer sent — waiting for data channel…';
+    if (peer) {
+        peer.destroy();
+        peer = null;
     }
-    // No 'candidate' handling needed — all candidates are embedded in the SDP
+
+    if ($rtcStatus) $rtcStatus.textContent = 'Offer received — creating peer…';
+
+    peer = new SimplePeer({ initiator: false, trickle: false });
+
+    peer.on('signal', answerData => {
+        socket.emit('signal', fromId, answerData);
+        if ($rtcStatus) $rtcStatus.textContent = 'Answer sent — connecting…';
+    });
+
+    peer.on('connect', () => {
+        if ($status) $status.textContent = 'Controller Connected!';
+        if ($rtcStatus) $rtcStatus.textContent = 'Connected — playing!';
+        const overlay = document.getElementById('connection-overlay');
+        if (overlay) overlay.classList.add('hidden');
+    });
+
+    peer.on('data', rawData => {
+        handleRemoteInput(rawData);
+    });
+
+    peer.on('close', () => {
+        if ($status) $status.textContent = 'Controller disconnected';
+        const overlay = document.getElementById('connection-overlay');
+        if (overlay) overlay.classList.remove('hidden');
+        peer = null;
+    });
+
+    peer.on('error', err => {
+        console.error('[game] peer error:', err);
+        const overlay = document.getElementById('connection-overlay');
+        if (overlay) overlay.classList.remove('hidden');
+        peer = null;
+    });
+
+    peer.signal(data);
 });
 
-function createPeerConnection(targetId) {
-    pc = new RTCPeerConnection(RTC_CONFIG);
-
-    // No trickle ICE — candidates are embedded in the SDP, so onicecandidate is unused
-    pc.onicecandidate = () => { };
-
-    pc.oniceconnectionstatechange = () => {
-        console.log('[game] ICE:', pc.iceConnectionState);
-        const $rtcStatus = document.getElementById('rtcStatus');
-        if ($rtcStatus) $rtcStatus.textContent = `ICE: ${pc.iceConnectionState}`;
-    };
-
-    pc.onconnectionstatechange = () => {
-        const $rtcStatus = document.getElementById('rtcStatus');
-        if ($rtcStatus) $rtcStatus.textContent = `WebRTC: ${pc.connectionState}`;
-    };
-
-    // The controller (offerer) creates the data channel; we receive it here
-    pc.ondatachannel = ({ channel }) => {
-        channel.onmessage = handleRemoteInput;
-
-        const onOpen = () => {
-            if ($status) $status.textContent = 'Controller Connected!';
-            const $rtcStatus = document.getElementById('rtcStatus');
-            if ($rtcStatus) $rtcStatus.textContent = 'Data channel open — playing!';
-            const overlay = document.getElementById('connection-overlay');
-            if (overlay) overlay.classList.add('hidden');
-        };
-
-        // The channel may already be open by the time ondatachannel fires
-        if (channel.readyState === 'open') {
-            onOpen();
-        } else {
-            channel.onopen = onOpen;
-        }
-
-        channel.onclose = () => {
-            if ($status) $status.textContent = 'Controller disconnected';
-            const overlay = document.getElementById('connection-overlay');
-            if (overlay) overlay.classList.remove('hidden');
-        };
-    };
-}
-
-// ── 2. Handle commands from the phone ─────────────────────────────────────────
-
-function handleRemoteInput(e) {
-    const msg = JSON.parse(e.data);
+function handleRemoteInput(rawData) {
+    const msg = JSON.parse(rawData);
 
     if (msg.type === 'move') {
         if (msg.x === null || msg.x === undefined) return; // sensor returned null, ignore
@@ -146,8 +96,6 @@ function handleRemoteInput(e) {
     }
 }
 
-// ── 3. Game Loop ───────────────────────────────────────────────────────────────
-
 function gameLoop() {
     update();
     draw();
@@ -155,13 +103,13 @@ function gameLoop() {
 }
 
 function update() {
-    // Move bullets upward; remove any that have left the top of the canvas
+    // Move bullets upward and remove any that have left the top of the canvas
     for (let i = bullets.length - 1; i >= 0; i--) {
         bullets[i].y -= 10;
         if (bullets[i].y < -10) bullets.splice(i, 1);
     }
 
-    // Randomly spawn a meteorite
+    // Randomly spawn meteorites
     if (Math.random() < 0.03) {
         meteorites.push({ x: Math.random() * canvas.width, y: -20, s: 2 + Math.random() * 3 });
     }

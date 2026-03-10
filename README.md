@@ -1,6 +1,51 @@
 # web4-assignment1-WebRTC
 
-## Day 01 — The Concept
+## Day 00 - Planning
+
+| Date | Phase | Task Description | Status (✅) |
+| :--- | :--- | :--- | :---: |
+| **February 28** | **Gyroscope** | Look into how to implement gyroscope logic | ✅ |
+| **March 1** | **Make a ball move** | Make a ball move on the screen with the gyroscope | ✅ |
+| **March 2** | **Prepare for consult** | Fix issues - Issue with gyroscope on Iphone| ✅ |
+| **March 6** | **Refactor code** | Clean up the code so the game will go easier. | ✅ |
+| **March 8** | **Falling stuff logic** | Start implementing the falling stuff logic | ✅ |
+| **March 10** | **UX & Connection** | Implement `qrcode.js` library in `index.html`. Create a connection overlay in `game.js` that auto-hides once `dataChannel.onopen` is detected. | ✅ |
+| **March 11** | **Memory Mgmt** | Optimize `game.js` update loop to remove bullets (`y < 0`) and meteorites (`y > height`) from arrays to prevent memory leaks and lag. |  |
+| **March 12** | **Core Gameplay** | Implement collision detection math using `Math.hypot()`. Use `.splice()` to destroy meteorites and bullets upon impact. |  |
+| **March 13** | **Scoring System** | Add global `score` state. Render current score to Canvas using `fillText()`. Implement `localStorage` for high score persistence. |  |
+| **March 14** | **Player Health** | Add ship-to-meteorite collision logic. Create a "Game Over" state that stops the loop and restores the connection overlay to restart. |  |
+| **March 15** | **Remote Feedback** | Enhance `remote.js` with haptic feedback (vibration) or screen flashes when firing. Add a "Start" button to handle gyro permissions. |  |
+| **March 16** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. |  |
+| **March 17** | **Visual Polish** | Replace primitive circles with `Image()` objects for sprites. Implement a parallax scrolling starfield background in the `draw()` loop. |  |
+| **March 18** | **Optimization** | Integrate the Screen Wake Lock API in `remote.js` to prevent mobile sleep mode. Profile performance for consistent 60 FPS. |  |
+| **March 19** | **Responsiveness** | Add window `resize` listeners to scale the Canvas. Test connection on a local network using the PC's actual IP address instead of localhost. |  |
+| **March 20** | **FINAL DEADLINE** | Final code cleanup: remove all `console.log` statements, verify documentation, and prepare the final project submission. |  |
+
+
+## Day 01 — Concept
+### WebRTC Space Interceptor
+
+The game is a cross-device arcade shooter where your desktop browser serves as the high-resolution game screen, and your smartphone acts as a wireless controller.
+
+#### 1. The Hardware Roles
+
+The Viewer (PC): Displays the actual game screen. A spaceship is positioned at the bottom of the screen, while alien ships and meteorites fall from the top. It handles all physics, collision detection, and scorekeeping.
+
+The Controller (Phone): Becomes a physical extension of the spaceship. By utilizing the phone’s built-in gyroscope and touchscreen, the player interacts with the game without needing a keyboard or mouse.
+
+#### 2. Core Mechanics
+
+Motion Control: The spaceship's horizontal movement is mapped to the phone's tilt (gamma angle). Tilting the phone left or right moves the ship across the bottom of the PC screen in real-time.
+
+Tactile Firing: Tapping the phone’s screen sends an instant "fire" command to the PC, triggering a laser blast from the spaceship to destroy incoming threats.
+
+Objective: Players must intercept and destroy falling meteorites and alien ships. The goal is to survive as long as possible while accumulating a high score.
+
+#### 3. The Technology (WebRTC + WebSockets)
+
+Signaling: When the game starts, the PC generates a QR Code. Scanning this with a phone uses WebSockets to connect.
+
+Peer-to-Peer Data: Once connected, the devices switch to a WebRTC DataChannel. This allows movement and firing data to travel directly from the phone to the PC with near-zero lag, ensuring the spaceship feels responsive during intense gameplay.
 
 ## Day 02 — Initial Setup
 
