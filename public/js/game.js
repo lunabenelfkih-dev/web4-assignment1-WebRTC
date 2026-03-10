@@ -1,7 +1,6 @@
 const socket = io();
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const $status = document.getElementById('status');
 
 let peer = null;
 
@@ -12,23 +11,12 @@ const bullets = [];
 const meteorites = [];
 
 socket.on('connect', () => {
-    const $idDisplay = document.getElementById('id-display');
-    if ($idDisplay) $idDisplay.textContent = `ID: ${socket.id}`;
-
-    const $socketId = document.getElementById('socketId');
-    if ($socketId) $socketId.textContent = socket.id;
-
     showControllerUrl(socket.id);
 });
 
 function showControllerUrl(id) {
-    const $rtcStatus = document.getElementById('rtcStatus');
-    const $url = document.getElementById('url');
     const $qr = document.getElementById('qr');
-
     const url = new URL(`/controller.html?id=${id}`, window.location);
-    if ($url) $url.textContent = url;
-    if ($rtcStatus) $rtcStatus.textContent = 'Waiting for controller…';
 
     if ($qr && typeof qrcode !== 'undefined') {
         const qr = qrcode(4, 'L');
@@ -52,12 +40,9 @@ socket.on('signal', (fromId, data) => {
 
     peer.on('signal', answerData => {
         socket.emit('signal', fromId, answerData);
-        if ($rtcStatus) $rtcStatus.textContent = 'Answer sent — connecting…';
     });
 
     peer.on('connect', () => {
-        if ($status) $status.textContent = 'Controller Connected!';
-        if ($rtcStatus) $rtcStatus.textContent = 'Connected — playing!';
         const overlay = document.getElementById('connection-overlay');
         if (overlay) overlay.classList.add('hidden');
     });
@@ -67,7 +52,6 @@ socket.on('signal', (fromId, data) => {
     });
 
     peer.on('close', () => {
-        if ($status) $status.textContent = 'Controller disconnected';
         const overlay = document.getElementById('connection-overlay');
         if (overlay) overlay.classList.remove('hidden');
         peer = null;

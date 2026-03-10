@@ -9,7 +9,7 @@
 | **March 2** | **Prepare for consult** | Fix issues - Issue with gyroscope on Iphone| ✅ |
 | **March 6** | **Refactor code** | Clean up the code so the game will go easier. | ✅ |
 | **March 8** | **Falling stuff logic** | Start implementing the falling stuff logic | ✅ |
-| **March 10** | **UX & Connection** | Implement `qrcode.js` library in `index.html`. Create a connection overlay in `game.js` that auto-hides once `dataChannel.onopen` is detected. | ✅ |
+| **March 10** | **UX & Connection** | Create a connection overlay in `game.js` that auto-hides the qr code when a phone is connected. | ✅ |
 | **March 11** | **Optimize game js** | Optimize `game.js` |  |
 | **March 12** | **Core Gameplay** | Implement collision detection to destroy meteorites and bullets upon impact. |  |
 | **March 13** | **Scoring System** | Add global `score` state. Render current score to Canvas. |  |
