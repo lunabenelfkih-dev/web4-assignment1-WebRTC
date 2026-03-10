@@ -301,3 +301,46 @@ server.listen(port, () => {
 </body>
 </html>
 ```
+## Day 05 — Refactoring Code 
+
+Re-organised the code a bit so it's more clear and easier to use. For example put the js in separate files.
+
+## Day 06 — Falling stuff logic
+
+Worked on a basic implementation for the falling stuff logic. 
+
+### code from AI
+Here is the basic logic from AI that was later implemented into game.js. This code handles the initialization, movement, and drawing of the falling meteorites:
+
+```js
+// 1. INITIALIZATION: The container for all active meteorites
+const meteorites = [];
+
+function update() {
+    // 2. SPAWNING LOGIC: Decides when to create a new meteorite
+    // Math.random() < 0.03 creates a ~3% chance per frame (about 2 per second)
+    if (Math.random() < 0.03) {
+        meteorites.push({ 
+            x: Math.random() * canvas.width, // Random horizontal start
+            y: -20,                          // Start just above the top edge
+            s: 2 + Math.random() * 3         // Random speed between 2 and 5 pixels/frame
+        });
+    }
+
+    // 3. MOVEMENT LOGIC: Updates the position of every meteorite in the list
+    meteorites.forEach(m => {
+        m.y += m.s; // Add the speed to the vertical position to make it fall
+    });
+}
+
+function draw() {
+    // 4. RENDERING LOGIC: Draws each meteorite as a red circle on the canvas
+    ctx.fillStyle = 'red'; 
+    meteorites.forEach(m => {
+        ctx.beginPath();
+        // ctx.arc(x, y, radius, startAngle, endAngle)
+        ctx.arc(m.x, m.y, 15, 0, Math.PI * 2); 
+        ctx.fill();
+    });
+}
+```

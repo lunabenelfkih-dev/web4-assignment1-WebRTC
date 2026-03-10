@@ -14,8 +14,11 @@
     <p>WebRTC: <span id="rtcStatus">Idle</span></p>
 
     <p id="instructions" style="display:none">
-        Tilt your phone left/right and forward/back to move the ball.
+        Tilt your phone left/right to move. Tap to fire.
     </p>
+
+    <!-- Live sensor debug readout -->
+    <p id="gyro-debug" style="font-family:monospace; font-size:1rem; color:#666;">Gamma: —</p>
 
     <!-- iOS 13+ requires a user gesture to grant DeviceOrientation permission -->
     <button id="enableGyro" style="padding:1rem 2rem; font-size:1.2rem">
@@ -28,6 +31,10 @@
         const $rtcStatus = document.getElementById('rtcStatus');
         const $instructions = document.getElementById('instructions');
         const $enableGyro = document.getElementById('enableGyro');
+        const $gyroDebug = document.getElementById('gyro-debug');
+
+        // Throttle: only send one orientation message per 50 ms
+        let lastSendTime = 0;
 
         let socket;
         let pc;          // RTCPeerConnection
@@ -35,9 +42,26 @@
         let targetSocketId;
 
         // ── ICE configuration ─────────────────────────────────────────────────────
-        const RTC_CONFIG = {
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-        };
+        // No STUN needed — phone and PC are on the same LAN.
+        const RTC_CONFIG = {};
+
+        /**
+         * Resolves when ICE gathering reaches 'complete', or after 3 seconds —
+         * whichever comes first. LAN (host) candidates are gathered in <100 ms;
+         * the timeout only fires if the browser is waiting on an unreachable STUN server.
+         */
+        function waitForIceGathering(pc) {
+            return new Promise(resolve => {
+                if (pc.iceGatheringState === 'complete') { resolve(); return; }
+                const timer = setTimeout(resolve, 3000);
+                pc.addEventListener('icegatheringstatechange', () => {
+                    if (pc.iceGatheringState === 'complete') {
+                        clearTimeout(timer);
+                        resolve();
+                    }
+                });
+            });
+        }
 
         // ── URL query-string helper ───────────────────────────────────────────────
         const getUrlParam = name => {
@@ -50,7 +74,17 @@
         // ── Send control data via the data channel ────────────────────────────────
         // Sends raw gamma so game.js can map it to canvas width (it expects -90..90).
         const sendGyro = (gamma) => {
+            // Always update the debug readout so we can see if the sensor is firing
+            $gyroDebug.textContent = `Gamma: ${gamma !== null ? gamma.toFixed(1) + '°' : 'null (sensor not ready)'}`;
+
+            if (gamma === null || gamma === undefined) return; // sensor not calibrated yet
             if (!dataChannel || dataChannel.readyState !== 'open') return;
+
+            // Throttle to 20 fps to avoid flooding the data channel
+            const now = Date.now();
+            if (now - lastSendTime < 50) return;
+            lastSendTime = now;
+
             dataChannel.send(JSON.stringify({ type: 'move', x: gamma }));
         };
 
@@ -72,22 +106,28 @@
                 $instructions.style.display = 'none';
             };
 
-            // Forward our ICE candidates to the desktop via socket.io
-            pc.onicecandidate = ({ candidate }) => {
-                if (candidate) {
-                    socket.emit('signal', targetSocketId, { type: 'candidate', candidate });
-                }
-            };
+            // No trickle ICE — candidates are embedded in the SDP
+            pc.onicecandidate = () => { };
 
             pc.onconnectionstatechange = () => {
                 $rtcStatus.textContent = `WebRTC: ${pc.connectionState}`;
             };
 
-            // Create and send the offer
+            pc.oniceconnectionstatechange = () => {
+                console.log('[controller] ICE state:', pc.iceConnectionState);
+                $rtcStatus.textContent = `ICE: ${pc.iceConnectionState}`;
+            };
+
+            // Create the offer, wait for all ICE candidates to be gathered,
+            // then send one complete offer with candidates embedded in the SDP
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
-            socket.emit('signal', targetSocketId, { type: 'offer', sdp: offer.sdp });
-            $rtcStatus.textContent = 'Offer sent — waiting for answer…';
+            $rtcStatus.textContent = 'Step 1/4: Gathering LAN candidates…';
+
+            await waitForIceGathering(pc);
+            $rtcStatus.textContent = 'Step 2/4: Sending offer to desktop…';
+            socket.emit('signal', targetSocketId, pc.localDescription);
+            $rtcStatus.textContent = 'Step 3/4: Offer sent — waiting for answer…';
         }
 
         // ── Gyroscope input ───────────────────────────────────────────────────────
@@ -147,15 +187,9 @@
             socket.on('signal', async (remoteSocketId, data) => {
                 if (data.type === 'answer') {
                     await pc.setRemoteDescription(new RTCSessionDescription(data));
-                    $rtcStatus.textContent = 'Answer received — establishing connection…';
-
-                } else if (data.type === 'candidate') {
-                    try {
-                        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-                    } catch (e) {
-                        console.warn('ICE candidate error:', e);
-                    }
+                    $rtcStatus.textContent = 'Step 4/4: Answer received — connecting…';
                 }
+                // No 'candidate' handling needed — all candidates are embedded in the SDP
             });
 
             // ── Input events replaced by gyroscope (see requestGyroPermission above) ──

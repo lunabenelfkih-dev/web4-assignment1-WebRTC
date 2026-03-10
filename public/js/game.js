@@ -5,7 +5,26 @@ const $status = document.getElementById('status');
 
 // WebRTC State
 let pc;
-const RTC_CONFIG = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+// No STUN needed — phone and PC are on the same LAN
+const RTC_CONFIG = {};
+
+/**
+ * Resolves when ICE gathering reaches 'complete', or after 3 seconds —
+ * whichever comes first. LAN (host) candidates are gathered in <100 ms;
+ * the timeout only fires if the browser is waiting on an unreachable STUN server.
+ */
+function waitForIceGathering(pc) {
+    return new Promise(resolve => {
+        if (pc.iceGatheringState === 'complete') { resolve(); return; }
+        const timer = setTimeout(resolve, 3000);
+        pc.addEventListener('icegatheringstatechange', () => {
+            if (pc.iceGatheringState === 'complete') {
+                clearTimeout(timer);
+                resolve();
+            }
+        });
+    });
+}
 
 // Game State
 canvas.width = window.innerWidth;
@@ -28,7 +47,7 @@ socket.on('connect', () => {
 });
 
 /**
- * Renders the controller URL and QR code into the #info panel.
+ * controller URL and QR code popup
  * Requires the qrcode-generator library to be loaded before game.js.
  */
 function showControllerUrl(id) {
@@ -49,29 +68,35 @@ function showControllerUrl(id) {
 }
 
 socket.on('signal', async (fromId, data) => {
-    // Lazily create the peer connection on the first signal from a controller
     if (!pc) createPeerConnection(fromId);
 
     if (data.type === 'offer') {
+        const $rtcStatus = document.getElementById('rtcStatus');
+        if ($rtcStatus) $rtcStatus.textContent = 'Offer received — gathering ICE…';
+
         await pc.setRemoteDescription(new RTCSessionDescription(data));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        // Send back the full answer object — controller expects { type:'answer', sdp }
-        socket.emit('signal', fromId, { type: 'answer', sdp: answer.sdp });
-    } else if (data.type === 'candidate') {
-        try {
-            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-        } catch (e) {
-            console.warn('ICE candidate error:', e);
-        }
+
+        // Wait until all our candidates are gathered, then send one complete answer
+        await waitForIceGathering(pc);
+        socket.emit('signal', fromId, pc.localDescription);
+
+        if ($rtcStatus) $rtcStatus.textContent = 'Answer sent — waiting for data channel…';
     }
+    // No 'candidate' handling needed — all candidates are embedded in the SDP
 });
 
 function createPeerConnection(targetId) {
     pc = new RTCPeerConnection(RTC_CONFIG);
 
-    pc.onicecandidate = ({ candidate }) => {
-        if (candidate) socket.emit('signal', targetId, { type: 'candidate', candidate });
+    // No trickle ICE — candidates are embedded in the SDP, so onicecandidate is unused
+    pc.onicecandidate = () => { };
+
+    pc.oniceconnectionstatechange = () => {
+        console.log('[game] ICE:', pc.iceConnectionState);
+        const $rtcStatus = document.getElementById('rtcStatus');
+        if ($rtcStatus) $rtcStatus.textContent = `ICE: ${pc.iceConnectionState}`;
     };
 
     pc.onconnectionstatechange = () => {
@@ -82,13 +107,26 @@ function createPeerConnection(targetId) {
     // The controller (offerer) creates the data channel; we receive it here
     pc.ondatachannel = ({ channel }) => {
         channel.onmessage = handleRemoteInput;
-        channel.onopen = () => {
+
+        const onOpen = () => {
             if ($status) $status.textContent = 'Controller Connected!';
             const $rtcStatus = document.getElementById('rtcStatus');
             if ($rtcStatus) $rtcStatus.textContent = 'Data channel open — playing!';
+            const overlay = document.getElementById('connection-overlay');
+            if (overlay) overlay.classList.add('hidden');
         };
+
+        // The channel may already be open by the time ondatachannel fires
+        if (channel.readyState === 'open') {
+            onOpen();
+        } else {
+            channel.onopen = onOpen;
+        }
+
         channel.onclose = () => {
             if ($status) $status.textContent = 'Controller disconnected';
+            const overlay = document.getElementById('connection-overlay');
+            if (overlay) overlay.classList.remove('hidden');
         };
     };
 }
@@ -99,6 +137,7 @@ function handleRemoteInput(e) {
     const msg = JSON.parse(e.data);
 
     if (msg.type === 'move') {
+        if (msg.x === null || msg.x === undefined) return; // sensor returned null, ignore
         // msg.x is raw gamma (-90..90); map to canvas width, clamped to [0, canvas.width]
         const normalised = Math.min(1, Math.max(0, (msg.x + 90) / 180));
         ship.x = normalised * canvas.width;
