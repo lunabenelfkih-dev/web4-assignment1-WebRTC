@@ -1,6 +1,51 @@
 # web4-assignment1-WebRTC
 
-## Day 01 — The Concept
+## Day 00 - Planning
+
+| Date | Topic | Description | Status |
+| :--- | :--- | :--- | :---: |
+| **February 28** | **Gyroscope** | Look into how to implement gyroscope logic | ✅ |
+| **March 1** | **Make a ball move** | Make a ball move on the screen with the gyroscope | ✅ |
+| **March 2** | **Prepare for consult** | Fix issues - Issue with gyroscope on Iphone| ✅ |
+| **March 6** | **Refactor code** | Clean up the code so the game will go easier. | ✅ |
+| **March 8** | **Falling stuff logic** | Start implementing the falling stuff logic | ✅ |
+| **March 10** | **UX & Connection** | Create a connection overlay in `game.js` that auto-hides the qr code when a phone is connected. | ✅ |
+| **March 11** | **Optimize game js** | Optimize `game.js` |  |
+| **March 12** | **Core Gameplay** | Implement collision detection to destroy meteorites and bullets upon impact. |  |
+| **March 13** | **Scoring System** | Add global `score` state. Render current score to Canvas. |  |
+| **March 14** | **Game over** | Create a "Game Over" state that stops the loop and restores the connection overlay to restart. |  |
+| **March 15** | **Remote Feedback** | Enhance `remote.js` with haptic feedback (vibration) or screen flashes when firing. Add a "Start" button to handle gyro permissions. |  |
+| **March 16** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. |  |
+| **March 17** | **Visual Polish** | Replace primitive circles with `Image()` objects for sprites. Implement a parallax scrolling starfield background in the `draw()` loop. |  |
+| **March 18** | **Optimization** | Optimise where needed. If time, implement sound. |  |
+| **March 19** | **Extra** | Implement extra features if time. For example something with the webcam. |  |
+| **March 22** | **FINAL DEADLINE** | Final code cleanup: remove all `console.log` statements, verify documentation, and prepare the final project submission. |  |
+
+
+## Day 01 — Concept
+### WebRTC Space Interceptor
+
+The game is a cross-device arcade shooter where your desktop browser serves as the high-resolution game screen, and your smartphone acts as a wireless controller.
+
+#### 1. The Hardware Roles
+
+The Viewer (PC): Displays the actual game screen. A spaceship is positioned at the bottom of the screen, while alien ships and meteorites fall from the top. It handles all physics, collision detection, and scorekeeping.
+
+The Controller (Phone): Becomes a physical extension of the spaceship. By utilizing the phone’s built-in gyroscope and touchscreen, the player interacts with the game without needing a keyboard or mouse.
+
+#### 2. Core Mechanics
+
+Motion Control: The spaceship's horizontal movement is mapped to the phone's tilt (gamma angle). Tilting the phone left or right moves the ship across the bottom of the PC screen in real-time.
+
+Tactile Firing: Tapping the phone’s screen sends an instant "fire" command to the PC, triggering a laser blast from the spaceship to destroy incoming threats.
+
+Objective: Players must intercept and destroy falling meteorites and alien ships. The goal is to survive as long as possible while accumulating a high score.
+
+#### 3. The Technology (WebRTC + WebSockets)
+
+Signaling: When the game starts, the PC generates a QR Code. Scanning this with a phone uses WebSockets to connect.
+
+Peer-to-Peer Data: Once connected, the devices switch to a WebRTC DataChannel. This allows movement and firing data to travel directly from the phone to the PC with near-zero lag, ensuring the spaceship feels responsive during intense gameplay.
 
 ## Day 02 — Initial Setup
 
@@ -300,4 +345,47 @@ server.listen(port, () => {
     </script>
 </body>
 </html>
+```
+## Day 05 — Refactoring Code 
+
+Re-organised the code a bit so it's more clear and easier to use. For example put the js in separate files.
+
+## Day 06 — Falling stuff logic
+
+Worked on a basic implementation for the falling stuff logic. 
+
+### code from AI
+Here is the basic logic from AI that was later implemented into game.js. This code handles the initialization, movement, and drawing of the falling meteorites:
+
+```js
+// 1. INITIALIZATION: The container for all active meteorites
+const meteorites = [];
+
+function update() {
+    // 2. SPAWNING LOGIC: Decides when to create a new meteorite
+    // Math.random() < 0.03 creates a ~3% chance per frame (about 2 per second)
+    if (Math.random() < 0.03) {
+        meteorites.push({ 
+            x: Math.random() * canvas.width, // Random horizontal start
+            y: -20,                          // Start just above the top edge
+            s: 2 + Math.random() * 3         // Random speed between 2 and 5 pixels/frame
+        });
+    }
+
+    // 3. MOVEMENT LOGIC: Updates the position of every meteorite in the list
+    meteorites.forEach(m => {
+        m.y += m.s; // Add the speed to the vertical position to make it fall
+    });
+}
+
+function draw() {
+    // 4. RENDERING LOGIC: Draws each meteorite as a red circle on the canvas
+    ctx.fillStyle = 'red'; 
+    meteorites.forEach(m => {
+        ctx.beginPath();
+        // ctx.arc(x, y, radius, startAngle, endAngle)
+        ctx.arc(m.x, m.y, 15, 0, Math.PI * 2); 
+        ctx.fill();
+    });
+}
 ```
