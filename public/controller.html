@@ -5,9 +5,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebRTC Controller</title>
+    <style>
+        /* Portrait mode warning - shown when screen is in portrait orientation */
+        #portrait-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        #portrait-warning.active {
+            display: flex;
+        }
+
+        #portrait-warning h1 {
+            font-size: 2.5rem;
+            margin: 0 0 1rem;
+        }
+
+        #portrait-warning p {
+            font-size: 1.3rem;
+            margin: 0;
+            color: #ccc;
+        }
+    </style>
 </head>
 
 <body>
+    <!-- Portrait mode warning overlay -->
+    <div id="portrait-warning">
+        <h1>📱 Rotate to Landscape</h1>
+        <p>Please rotate your phone to landscape mode to play</p>
+    </div>
+
     <h1>WebRTC Controller</h1>
 
     <p>Status: <span id="status">Connecting to server…</span></p>
@@ -17,7 +59,7 @@
         Tilt your phone left/right to move. Tap to fire.
     </p>
 
-    <p id="gyro-debug" style="font-family:monospace; font-size:1rem; color:#666;">Gamma: —</p>
+    <p id="gyro-debug" style="font-family:monospace; font-size:1rem; color:#666;">Beta: —</p>
 
     <button id="enableGyro" style="padding:1rem 2rem; font-size:1.2rem">
         Tap to enable gyroscope
@@ -32,6 +74,7 @@
         const $instructions = document.getElementById('instructions');
         const $enableGyro = document.getElementById('enableGyro');
         const $gyroDebug = document.getElementById('gyro-debug');
+        const $portraitWarning = document.getElementById('portrait-warning');
 
         let lastSendTime = 0;
         let socket;
@@ -45,16 +88,16 @@
             return results === null ? false : decodeURIComponent(results[1].replace(/\+/g, ' '));
         };
 
-        const sendGyro = (gamma) => {
-            $gyroDebug.textContent = `Gamma: ${gamma !== null ? gamma.toFixed(1) + '°' : 'null (sensor not ready)'}`;
-            if (gamma === null || gamma === undefined) return; // sensor not calibrated yet
+        const sendGyro = (beta) => {
+            $gyroDebug.textContent = `Beta: ${beta !== null ? beta.toFixed(1) + '°' : 'null (sensor not ready)'}`;
+            if (beta === null || beta === undefined) return; // sensor not calibrated yet
             if (!peer || !peer.connected) return;
 
             const now = Date.now();
             if (now - lastSendTime < 50) return;
             lastSendTime = now;
 
-            peer.send(JSON.stringify({ type: 'move', x: gamma }));
+            peer.send(JSON.stringify({ type: 'move', x: beta }));
         };
 
         // Simple Peer setup (Initiator)
@@ -87,11 +130,28 @@
         // Gyroscope input
         const startGyro = () => {
             window.addEventListener('deviceorientation', e => {
-                sendGyro(e.gamma);
+                // Use beta for landscape mode tilt (left/right rotation)
+                sendGyro(e.beta);
             });
             $enableGyro.textContent = 'Gyroscope active ✅';
             $enableGyro.disabled = true;
         };
+
+        // Check orientation and show portrait warning if needed
+        const checkOrientation = () => {
+            if (window.innerHeight > window.innerWidth) {
+                // Portrait mode
+                $portraitWarning.classList.add('active');
+            } else {
+                // Landscape mode
+                $portraitWarning.classList.remove('active');
+            }
+        };
+
+        // Monitor orientation changes
+        window.addEventListener('orientationchange', checkOrientation);
+        window.addEventListener('resize', checkOrientation);
+        checkOrientation(); // Check on load
 
         const requestGyroPermission = () => {
             if (typeof DeviceOrientationEvent !== 'undefined' &&

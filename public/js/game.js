@@ -79,8 +79,10 @@ function handleRemoteInput(rawData) {
 
     if (msg.type === 'move') {
         if (msg.x === null || msg.x === undefined) return; // sensor returned null, ignore
-        // msg.x is raw gamma (-90..90); map to canvas width, clamped to [0, canvas.width]
-        const normalised = Math.min(1, Math.max(0, (msg.x + 90) / 180));
+        // msg.x is beta (-45..45) for landscape mode; map to canvas width, clamped to [0, canvas.width]
+        // Clamp beta to -45..45 range for sensitivity and edge behavior
+        const clampedBeta = Math.min(45, Math.max(-45, msg.x));
+        const normalised = Math.min(1, Math.max(0, (clampedBeta + 45) / 90));
         ship.x = normalised * canvas.width;
     } else if (msg.type === 'fire') {
         bullets.push({ x: ship.x, y: ship.y - 20 });
@@ -119,16 +121,16 @@ function update() {
     }
 
     // CALCULATE DIFFICULTY (Slow progression)
-    // Every 300 points, the game gets slightly harder
-    const level = Math.floor(score / 300);
+    // Every 200 points, the game gets slightly harder
+    const level = Math.floor(score / 200);
 
     // VERY LOW STARTING CHANCE
     // Starts at 1% chance. Adds 0.2% per level.
-    const spawnChance = 0.001 + (level * 0.002);
+    const spawnChance = 0.0015 + (level * 0.002);
 
-    // We only spawn if random is met AND we have fewer than 15 meteorites on screen
+    // We only spawn if random is met AND we have fewer than 10 meteorites on screen
     // This "Population Cap" prevents the screen from being covered in red circles
-    if (Math.random() < spawnChance && meteorites.length < 15) {
+    if (Math.random() < spawnChance && meteorites.length < 10) {
 
         // SLOWER STARTING SPEED
         // Base speed is now 1. Randomness is reduced.
@@ -169,10 +171,9 @@ function update() {
         }
     }
 
-    // Collision detection: ship vs meteorites (game over condition)
+    // Game over condition: meteorite reached ship level (y position)
     for (let i = meteorites.length - 1; i >= 0; i--) {
-        const dist = Math.hypot(ship.x - meteorites[i].x, ship.y - meteorites[i].y);
-        if (dist < 35) { // collision threshold (ship ~20px radius + meteorite ~15px radius)
+        if (meteorites[i].y >= ship.y) {
             endGame();
             return;
         }

@@ -69,7 +69,8 @@ async function startWebRTC() {
 function startGyro() {
     window.addEventListener('deviceorientation', (e) => {
         if (dataChannel?.readyState === 'open') {
-            dataChannel.send(JSON.stringify({ type: 'move', x: e.gamma }));
+            // Use beta for landscape mode tilt (left/right rotation)
+            dataChannel.send(JSON.stringify({ type: 'move', x: e.beta }));
         }
     });
 }
