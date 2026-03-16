@@ -6,6 +6,16 @@ let peer = null;
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+
+// Load background image
+const backgroundImg = new Image();
+backgroundImg.src = '/assets/background.svg';
+// Load meteorite sprite
+const meteoriteImg = new Image();
+meteoriteImg.src = '/assets/meteorite.svg';
+// Load rocket sprite
+const rocketImg = new Image();
+rocketImg.src = '/assets/rocket.svg';
 const ship = { x: canvas.width / 2, y: canvas.height - 80, size: 40 };
 const bullets = [];
 const meteorites = [];
@@ -125,8 +135,8 @@ function update() {
     const level = Math.floor(score / 200);
 
     // VERY LOW STARTING CHANCE
-    // Starts at 1% chance. Adds 0.2% per level.
-    const spawnChance = 0.0015 + (level * 0.002);
+    // Starts at 2% chance. Adds 0.2% per level.
+    const spawnChance = 0.002 + (level * 0.002);
 
     // We only spawn if random is met AND we have fewer than 10 meteorites on screen
     // This "Population Cap" prevents the screen from being covered in red circles
@@ -197,23 +207,40 @@ function restartGame() {
 }
 
 function draw() {
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Draw background image, fallback to black if not loaded
+    if (backgroundImg.complete) {
+        ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+    } else {
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     // Ship
-    ctx.fillStyle = 'lime';
-    ctx.fillRect(ship.x - 20, ship.y, 40, 20);
+    if (rocketImg.complete) {
+        // Draw rocket sprite, centered at ship position
+        ctx.drawImage(rocketImg, ship.x - 100, ship.y - 100, 180, 180);
+    } else {
+        // Fallback: draw lime rectangle if sprite not loaded
+        ctx.fillStyle = 'white';
+        ctx.fillRect(ship.x - 20, ship.y, 40, 20);
+    }
 
     // Bullets
-    ctx.fillStyle = 'yellow';
+    ctx.fillStyle = 'orange';
     bullets.forEach(b => ctx.fillRect(b.x - 2, b.y, 4, 10));
 
     // Meteorites
-    ctx.fillStyle = 'red';
     meteorites.forEach(m => {
-        ctx.beginPath();
-        ctx.arc(m.x, m.y, 15, 0, Math.PI * 2);
-        ctx.fill();
+        if (meteoriteImg.complete) {
+            // Draw meteorite sprite (48px wide x 245px tall), centered at position
+            ctx.drawImage(meteoriteImg, m.x - 24, m.y - 122.5, 48, 245);
+        } else {
+            // Fallback: draw red circle if sprite not loaded
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(m.x, m.y, 15, 0, Math.PI * 2);
+            ctx.fill();
+        }
     });
 
     // Render score and high score

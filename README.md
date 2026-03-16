@@ -415,16 +415,10 @@ I looked up how to check collision through JS and found that i could do so throu
 Add score logic and show the current score and high score on the screen.
 
 ## Day 10 — Game over
-Implement logic so that when the ship collides with a meteorite, it's game over. We use a similar logic like with the overlapping of the bullets and meteorites with the `hypot()` function. I also added a count down before the game starts and some logic to make sure the game only starts when the user is connected. Otherwise the game would sometimes be over even without it having started.
+Implement logic so that when a meteorite's y value is lower than the ship's y value, it's game over. I also added a count down before the game starts and some logic to make sure the game only starts when the user is connected. Because I noticed that otherwise the game would sometimes be over even without it having started.
 
 ## Day 11 — Make game more playable
 I noticed that it was really hard to play because in the beginning they were immediately way too much meteorites so decided to look into that. I added a difficulty scale so the higher the score, the more difficult the game gets.
-
-- **Level:** Every 200 points = +1 difficulty level
-- **Spawn Chance:** Starts 1%, increases 0.2% per level (max 15 meteorites on screen)
-- **Speed Range:** Base 1 px/frame, scales by +0.3 per level (capped at 8 px/frame)
-
-Progressive difficulty that challenges without being unfair.
 
 ## Day 12 — Landscape Mode Refactoring
 While testing the game i noticed that it does not feel natural to hold the phone vertically so i wanted to implement something so the user has to turn their phone in landscape to play the game. This would give more the feeling of a real game remote.
@@ -466,79 +460,7 @@ Result: More responsive steering (smaller angle range = larger movement ratio).
 - Monitors `orientationchange` and `resize` events
 - Dynamically shows/hides based on screen dimensions
 
-## Day 13 — Haptic Feedback
-**Game Screen (`game.js`):**
-- `endGame()` sends `{ type: 'vibrate' }` through peer data channel
-
-**Controller (`remote.js` & `controller.html`):**
-- Data channel message listener detects vibrate messages
-- Triggers `navigator.vibrate(200)` for 200ms haptic pulse
-
-Provides immediate physical feedback when ship collides.
-
-
-
-
-
-### Files Modified
-
-| File | Changes |
-|---|---|
-| `public/js/game.js` | Collision detection, scoring, Game Over, countdown, landscape mapping, haptics |
-| `js/remote.js` | Beta axis (landscape), haptics listener, data channel message handler |
-| `public/controller.html` | Beta display, portrait warning overlay, orientation monitoring, haptics feedback |
-
-### Key Code Implementations
-
-**Countdown Logic:**
-```javascript
-function startCountdown(duration = 3) {
-    countdownValue = duration;
-    const countdownInterval = setInterval(() => {
-        countdownValue--;
-        if (countdownValue <= 0) {
-            clearInterval(countdownInterval);
-            gameStarted = true;
-        }
-    }, 1000);
-}
-```
-
-**Collision Detection:**
-```javascript
-const dist = Math.hypot(bullets[i].x - meteorites[j].x, bullets[i].y - meteorites[j].y);
-if (dist < 20) {
-    meteorites.splice(j, 1);
-    bullets.splice(i, 1);
-    score += 10;
-    if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('highScore', highScore);
-    }
-    break;
-}
-```
-
-**Landscape Tilt Mapping:**
-```javascript
-const clampedBeta = Math.min(45, Math.max(-45, msg.x));
-const normalised = Math.min(1, Math.max(0, (clampedBeta + 45) / 90));
-ship.x = normalised * canvas.width;
-```
-
-### Testing Checklist
-
-- ✅ QR code generates without syntax errors
-- ✅ Game waits for peer connection before countdown
-- ✅ Countdown displays (3...2...1...) correctly
-- ✅ Ship responds smoothly to landscape tilt
-- ✅ Collisions detected accurately with `Math.hypot()`
-- ✅ Score persists in `localStorage`
-- ✅ Game Over overlay displays final score
-- ✅ Portrait warning shows on device rotation
-- ✅ Vibration feedback triggers on collision
-- ✅ Adaptive difficulty scales appropriately
-
+## Day 13 — 
 
 
 ### add replay game option? - NOT YET

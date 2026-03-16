@@ -12,6 +12,7 @@ const io = new Server(server);
 const port = 3000;
 
 app.use(express.static('public'));
+app.use('/assets', express.static('assets'));
 
 const clients = {};
 
