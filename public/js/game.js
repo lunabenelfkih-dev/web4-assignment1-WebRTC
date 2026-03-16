@@ -88,9 +88,12 @@ function gameLoop() {
 
 function update() {
     // Move bullets upward and remove any that have left the top of the canvas
-    for (let i = bullets.length - 1; i >= 0; i--) {
+    for (let i = 0; i < bullets.length; i++) {
         bullets[i].y -= 10;
-        if (bullets[i].y < -10) bullets.splice(i, 1);
+    }
+    // Filter out off-screen bullets to prevent memory leaks
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        if (bullets[i].y < 0) bullets.splice(i, 1);
     }
 
     // Randomly spawn meteorites
@@ -99,9 +102,12 @@ function update() {
     }
 
     // Move meteorites downward; remove any that have left the bottom of the canvas
-    for (let i = meteorites.length - 1; i >= 0; i--) {
+    for (let i = 0; i < meteorites.length; i++) {
         meteorites[i].y += meteorites[i].s;
-        if (meteorites[i].y > canvas.height + 30) meteorites.splice(i, 1);
+    }
+    // Filter out off-screen meteorites to prevent memory leaks
+    for (let i = meteorites.length - 1; i >= 0; i--) {
+        if (meteorites[i].y > canvas.height) meteorites.splice(i, 1);
     }
 }
 

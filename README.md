@@ -389,3 +389,7 @@ function draw() {
     });
 }
 ```
+## Day 07 — Optimize game.js
+
+Updated the loop from game.js to remove the bullets and meteorites from the arrays to prevent memory issues and lagging. There's no need for the array to keep all of them at all times. Bullets and meteorites will be removed when they go out of the screen.
+
