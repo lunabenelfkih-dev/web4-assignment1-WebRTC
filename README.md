@@ -393,3 +393,26 @@ function draw() {
 
 Updated the loop from game.js to remove the bullets and meteorites from the arrays to prevent memory issues and lagging. There's no need for the array to keep all of them at all times. Bullets and meteorites will be removed when they go out of the screen.
 
+## Day 08 — Detect overlapping and delete meteorites and bullets
+
+### code from AI
+I looked up how to check collision through JS and found that i could do so through `hypot()`. I then used AI to help me to implement this.
+
+```js
+    // Collision detection: bullets vs meteorites
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        for (let j = meteorites.length - 1; j >= 0; j--) {
+            const dist = Math.hypot(bullets[i].x - meteorites[j].x, bullets[i].y - meteorites[j].y);
+            if (dist < 20) { // collision threshold (bullet ~2px + meteorite ~15px radius)
+                meteorites.splice(j, 1);
+                bullets.splice(i, 1);
+                break; // bullet destroyed, move to next bullet
+            }
+        }
+    }
+```
+
+### updating the code
+I quickly noticed that the meteorites were falling way to quick and with way to many so decided to tackle that.
+
+

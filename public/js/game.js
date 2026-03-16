@@ -109,6 +109,18 @@ function update() {
     for (let i = meteorites.length - 1; i >= 0; i--) {
         if (meteorites[i].y > canvas.height) meteorites.splice(i, 1);
     }
+
+    // Collision detection: bullets vs meteorites
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        for (let j = meteorites.length - 1; j >= 0; j--) {
+            const dist = Math.hypot(bullets[i].x - meteorites[j].x, bullets[i].y - meteorites[j].y);
+            if (dist < 20) { // collision threshold (bullet ~2px + meteorite ~15px radius)
+                meteorites.splice(j, 1);
+                bullets.splice(i, 1);
+                break; // bullet destroyed, move to next bullet
+            }
+        }
+    }
 }
 
 function draw() {
