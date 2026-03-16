@@ -12,6 +12,9 @@ const meteorites = [];
 
 let score = 0;
 let highScore = localStorage.getItem('highScore') ? parseInt(localStorage.getItem('highScore')) : 0;
+let gameOver = false;
+let gameStarted = false;
+let countdownValue = 0; // 0 means no countdown, positive numbers display the countdown
 
 socket.on('connect', () => {
     showControllerUrl(socket.id);
@@ -48,6 +51,7 @@ socket.on('signal', (fromId, data) => {
     peer.on('connect', () => {
         const overlay = document.getElementById('connection-overlay');
         if (overlay) overlay.classList.add('hidden');
+        startCountdown(3); // Start 3-second countdown before game begins
     });
 
     peer.on('data', rawData => {
@@ -83,8 +87,23 @@ function handleRemoteInput(rawData) {
     }
 }
 
+function startCountdown(duration = 3) {
+    countdownValue = duration;
+    const countdownInterval = setInterval(() => {
+        countdownValue--;
+        if (countdownValue <= 0) {
+            clearInterval(countdownInterval);
+            countdownValue = 0;
+            gameStarted = true;
+        }
+    }, 1000);
+}
+
 function gameLoop() {
-    update();
+    // Always draw, but only update if game has started and not over
+    if (gameStarted && !gameOver) {
+        update();
+    }
     draw();
     requestAnimationFrame(gameLoop);
 }
@@ -99,9 +118,29 @@ function update() {
         if (bullets[i].y < 0) bullets.splice(i, 1);
     }
 
-    // Randomly spawn meteorites
-    if (Math.random() < 0.03) {
-        meteorites.push({ x: Math.random() * canvas.width, y: -20, s: 2 + Math.random() * 3 });
+    // CALCULATE DIFFICULTY (Slow progression)
+    // Every 300 points, the game gets slightly harder
+    const level = Math.floor(score / 300);
+
+    // VERY LOW STARTING CHANCE
+    // Starts at 1% chance. Adds 0.2% per level.
+    const spawnChance = 0.001 + (level * 0.002);
+
+    // We only spawn if random is met AND we have fewer than 15 meteorites on screen
+    // This "Population Cap" prevents the screen from being covered in red circles
+    if (Math.random() < spawnChance && meteorites.length < 15) {
+
+        // SLOWER STARTING SPEED
+        // Base speed is now 1. Randomness is reduced.
+        const baseSpeed = 1 + (level * 0.3);
+        const maxSpeed = 3 + (level * 0.5);
+        const speed = baseSpeed + Math.random() * (maxSpeed - baseSpeed);
+
+        meteorites.push({
+            x: Math.random() * canvas.width,
+            y: -20,
+            s: Math.min(speed, 8) // Never faster than 8 pixels per frame
+        });
     }
 
     // Move meteorites downward; remove any that have left the bottom of the canvas
@@ -129,6 +168,31 @@ function update() {
             }
         }
     }
+
+    // Collision detection: ship vs meteorites (game over condition)
+    for (let i = meteorites.length - 1; i >= 0; i--) {
+        const dist = Math.hypot(ship.x - meteorites[i].x, ship.y - meteorites[i].y);
+        if (dist < 35) { // collision threshold (ship ~20px radius + meteorite ~15px radius)
+            endGame();
+            return;
+        }
+    }
+}
+
+function endGame() {
+    gameOver = true;
+    const overlay = document.getElementById('connection-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+    draw(); // draw final state with game over text
+}
+
+function restartGame() {
+    gameOver = false;
+    score = 0;
+    bullets.length = 0;
+    meteorites.length = 0;
+    ship.x = canvas.width / 2;
+    gameLoop();
 }
 
 function draw() {
@@ -156,6 +220,30 @@ function draw() {
     ctx.font = '20px Arial';
     ctx.fillText(`Score: ${score}`, 20, 30);
     ctx.fillText(`High Score: ${highScore}`, 20, 60);
+
+    // Render countdown if active
+    if (countdownValue > 0 && !gameStarted) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 120px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(countdownValue, canvas.width / 2, canvas.height / 2);
+        ctx.textAlign = 'left';
+    }
+
+    // Render game over message
+    if (gameOver) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 60px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+        ctx.font = '30px Arial';
+        ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 60);
+        ctx.textAlign = 'left';
+    }
 }
 
 gameLoop();

@@ -13,7 +13,7 @@
 | **March 11** | **Optimize game js** | Optimize `game.js` |  |
 | **March 12** | **Core Gameplay** | Implement collision detection to destroy meteorites and bullets upon impact. | ✅ |
 | **March 13** | **Scoring System** | Add global `score` state. Render current score to Canvas. | ✅ |
-| **March 14** | **Game over** | Create a "Game Over" state that stops the loop and restores the connection overlay to restart. |  |
+| **March 14** | **Game over** | Create a "Game Over" state that stops the loop and restores the connection overlay to restart. | ✅ |
 | **March 15** | **Remote Feedback** | Enhance `remote.js` with haptic feedback (vibration) or screen flashes when firing. Add a "Start" button to handle gyro permissions. |  |
 | **March 16** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. |  |
 | **March 17** | **Visual Polish** | Replace primitive circles with `Image()` objects for sprites. Implement a parallax scrolling starfield background in the `draw()` loop. |  |
@@ -411,12 +411,19 @@ I looked up how to check collision through JS and found that i could do so throu
         }
     }
 ```
-## Day 09 — Add score logic and show the current score and high score
+## Day 09 — Score logic
+Add score logic and show the current score and high score on the screen.
+
+## Day 10 — Game over
+Implement logic so that when the ship collides with a meteorite, it's game over. We use a similar logic like with the overlapping of the bullets and meteorites with the `hypot()` function.
+
+## Day 11 — Make game more playable
+I noticed that it was really hard to play because in the beginning they were immediately way too much meteorites so decided to look into that.
 
 
 
 
-### add game time? - NOT YET
+
 
 ### add replay game option? - NOT YET
 
