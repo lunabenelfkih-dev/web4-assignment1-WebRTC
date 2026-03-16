@@ -10,6 +10,9 @@ const ship = { x: canvas.width / 2, y: canvas.height - 80, size: 40 };
 const bullets = [];
 const meteorites = [];
 
+let score = 0;
+let highScore = localStorage.getItem('highScore') ? parseInt(localStorage.getItem('highScore')) : 0;
+
 socket.on('connect', () => {
     showControllerUrl(socket.id);
 });
@@ -117,6 +120,11 @@ function update() {
             if (dist < 20) { // collision threshold (bullet ~2px + meteorite ~15px radius)
                 meteorites.splice(j, 1);
                 bullets.splice(i, 1);
+                score += 10; // increment score on hit
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('highScore', highScore);
+                }
                 break; // bullet destroyed, move to next bullet
             }
         }
@@ -142,6 +150,12 @@ function draw() {
         ctx.arc(m.x, m.y, 15, 0, Math.PI * 2);
         ctx.fill();
     });
+
+    // Render score and high score
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.fillText(`Score: ${score}`, 20, 30);
+    ctx.fillText(`High Score: ${highScore}`, 20, 60);
 }
 
 gameLoop();

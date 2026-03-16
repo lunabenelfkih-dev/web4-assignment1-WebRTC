@@ -11,8 +11,8 @@
 | **March 8** | **Falling stuff logic** | Start implementing the falling stuff logic | ✅ |
 | **March 10** | **UX & Connection** | Create a connection overlay in `game.js` that auto-hides the qr code when a phone is connected. | ✅ |
 | **March 11** | **Optimize game js** | Optimize `game.js` |  |
-| **March 12** | **Core Gameplay** | Implement collision detection to destroy meteorites and bullets upon impact. |  |
-| **March 13** | **Scoring System** | Add global `score` state. Render current score to Canvas. |  |
+| **March 12** | **Core Gameplay** | Implement collision detection to destroy meteorites and bullets upon impact. | ✅ |
+| **March 13** | **Scoring System** | Add global `score` state. Render current score to Canvas. | ✅ |
 | **March 14** | **Game over** | Create a "Game Over" state that stops the loop and restores the connection overlay to restart. |  |
 | **March 15** | **Remote Feedback** | Enhance `remote.js` with haptic feedback (vibration) or screen flashes when firing. Add a "Start" button to handle gyro permissions. |  |
 | **March 16** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. |  |
@@ -411,8 +411,19 @@ I looked up how to check collision through JS and found that i could do so throu
         }
     }
 ```
+## Day 09 — Add score logic and show the current score and high score
 
-### updating the code
+
+
+
+### add game time? - NOT YET
+
+### add replay game option? - NOT YET
+
+### updating the code - NOT YET
 I quickly noticed that the meteorites were falling way to quick and with way to many so decided to tackle that.
+
+### usability of the remote - NOT YET
+While testing the game i noticed that it does not feel natural to hold the phone vertically so i wanted to implement something so the user has to turn their phone to play the game. This would give more the feeling of a real game remote.
 
 
