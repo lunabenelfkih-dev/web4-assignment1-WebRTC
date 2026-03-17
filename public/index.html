@@ -19,7 +19,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: hsl(208, 57%, 5%,90%);
+            background: hsl(208, 57%, 5%, 90%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -61,6 +61,11 @@
         #gameCanvas {
             display: block;
         }
+
+        .hidden {
+            display: none !important;
+            pointer-events: none;
+        }
     </style>
 </head>
 
@@ -70,6 +75,16 @@
         <h2>Scan to connect your controller</h2>
         <div id="qr"></div>
         <p id="overlay-subtitle">Open on your phone and tilt to play</p>
+    </div>
+
+    <!-- ── Game Over overlay with final score and restart button ── -->
+    <div id="game-over-overlay" class="hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 101; color: white; text-align: center; padding: 1.5rem; box-sizing: border-box; font-family: Helvetica, sans-serif; transition: opacity 0.5s;">
+        <h2 style="margin: 0 0 1rem; font-size: 3rem;">GAME OVER</h2>
+        <p style="font-size: 1.5rem; margin: 0 0 2rem;">Final Score: <span id="final-score">0</span></p>
+        <button id="restart-btn"
+            style="padding: 1rem 2rem; font-size: 1.2rem; background: #ea580c; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 1rem;">Restart
+            Game</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>

@@ -61,7 +61,7 @@ socket.on('signal', (fromId, data) => {
     peer.on('connect', () => {
         const overlay = document.getElementById('connection-overlay');
         if (overlay) overlay.classList.add('hidden');
-        startCountdown(3); // Start 3-second countdown before game begins
+        // Don't start countdown yet; wait for gyro_ready message from phone
     });
 
     peer.on('data', rawData => {
@@ -96,6 +96,12 @@ function handleRemoteInput(rawData) {
         ship.x = normalised * canvas.width;
     } else if (msg.type === 'fire') {
         bullets.push({ x: ship.x - 10, y: ship.y - 100 });
+    } else if (msg.type === 'gyro_ready') {
+        // Phone has confirmed gyroscope access; start countdown
+        startCountdown(3);
+    } else if (msg.type === 'restart_request') {
+        // Phone requested restart; call restartGame
+        restartGame();
     }
 }
 
@@ -200,19 +206,46 @@ function update() {
 
 function endGame() {
     gameOver = true;
-    const overlay = document.getElementById('connection-overlay');
-    if (overlay) overlay.classList.remove('hidden');
-    draw(); // draw final state with game over text
+    gameStarted = false; // Stop the game
+
+    // Send game over message to controller so it can show restart button
+    if (peer && peer.connected) {
+        peer.send(JSON.stringify({ type: 'game_over', value: score }));
+    }
+
+    // Show the game over overlay with final score
+    const gameOverOverlay = document.getElementById('game-over-overlay');
+    const finalScoreSpan = document.getElementById('final-score');
+    if (gameOverOverlay && finalScoreSpan) {
+        finalScoreSpan.textContent = score;
+        gameOverOverlay.classList.remove('hidden');
+    }
 }
 
 function restartGame() {
+    // Hide the game over overlay
+    const gameOverOverlay = document.getElementById('game-over-overlay');
+    if (gameOverOverlay) {
+        gameOverOverlay.classList.add('hidden');
+    }
+
+    // Reset game state
     gameOver = false;
     score = 0;
-    sendScoreToController(); // send reset score to controller
     bullets.length = 0;
     meteorites.length = 0;
     ship.x = canvas.width / 2;
-    gameLoop();
+
+    // Ensure connection overlay stays hidden if peer is still connected
+    if (peer && peer.connected) {
+        const connectionOverlay = document.getElementById('connection-overlay');
+        if (connectionOverlay) {
+            connectionOverlay.classList.add('hidden');
+        }
+    }
+
+    sendScoreToController(); // send reset score to controller
+    startCountdown(3); // Start 3-second countdown before game begins
 }
 
 function draw() {
@@ -287,18 +320,19 @@ function draw() {
         ctx.textAlign = 'left';
     }
 
-    // Render game over message
-    if (gameOver) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    // Show waiting state while connected but not started
+    if (peer && peer.connected && !gameStarted && countdownValue === 0 && !gameOver) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = 'white';
-        ctx.font = 'bold 60px Arial';
+        ctx.font = '24px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
-        ctx.font = '30px Arial';
-        ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 60);
+        ctx.fillText('CONNECTED. ENABLE SENSORS ON PHONE TO START.', canvas.width / 2, canvas.height / 2);
         ctx.textAlign = 'left';
     }
 }
+
+// Add event listener for restart button
+document.getElementById('restart-btn').addEventListener('click', restartGame);
 
 gameLoop();
