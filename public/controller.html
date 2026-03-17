@@ -6,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebRTC Controller</title>
     <style>
+        /* Global reset to remove default margins and ensure full viewport coverage */
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
         /* Portrait mode warning - shown when screen is in portrait orientation */
         #portrait-warning {
             display: none;
@@ -40,6 +50,123 @@
             margin: 0;
             color: #ccc;
         }
+
+        /* Game controller UI overlay */
+        #controller-ui {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background: #050C12;
+            background-image:
+                url('/assets/controller-stars.png'),
+                url('/assets/controller-mist.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        #controller-ui::before {
+            display: none;
+        }
+
+        #controller-ui.active {
+            display: flex;
+        }
+
+        .controller-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Control center wrapper for tilt and fire icons */
+        .control-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 80px;
+        }
+
+        /* Tilt/Gyroscope indicator */
+        .tilt-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .tilt-label {
+            font-size: 12px;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            text-transform: uppercase;
+        }
+
+        .tilt-bar-container {
+            width: 300px;
+            height: 40px;
+            border: 2px solid rgba(147, 197, 253, 0.4);
+            display: flex;
+            overflow: hidden;
+            background: rgba(5, 12, 18, 0.5);
+        }
+
+        .tilt-bar {
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #ea580c 50%, transparent);
+            width: 0%;
+            transition: width 0.1s ease-out;
+            box-shadow: 0 0 20px rgba(234, 88, 12, 0.6);
+        }
+
+        .tilt-bar.active {
+            width: 60%;
+            background: linear-gradient(90deg, transparent, #ff7c00 50%, transparent);
+            box-shadow: 0 0 30px rgba(255, 124, 0, 0.8);
+        }
+
+        /* Fire icons on sides */
+        .fire-icon {
+            width: 150px;
+            height: 150px;
+            opacity: 0.9;
+            flex-shrink: 0;
+        }
+
+        .fire-icon.left {
+            order: -1;
+        }
+
+        .fire-icon.right {
+            order: 1;
+        }
+
+        /* Score display */
+        .score-display {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: rgba(147, 197, 253, 0.9);
+        }
     </style>
 </head>
 
@@ -50,7 +177,27 @@
         <p>Please rotate your phone to landscape mode to play</p>
     </div>
 
-    <h1>WebRTC Controller</h1>
+    <!-- Game controller UI overlay -->
+    <div id="controller-ui">
+        <div class="score-display" id="score-display">SCORE: 0</div>
+        <div class="controller-container">
+            <div class="control-center">
+                <!-- Left fire icon -->
+                <img src="/assets/fire.svg" alt="Fire" class="fire-icon left">
+
+                <!-- Tilt indicator overlay -->
+                <div class="tilt-indicator">
+                    <div class="tilt-label">TILT</div>
+                    <div class="tilt-bar-container">
+                        <div class="tilt-bar" id="tilt-bar"></div>
+                    </div>
+                </div>
+
+                <!-- Right fire icon -->
+                <img src="/assets/fire.svg" alt="Fire" class="fire-icon right">
+            </div>
+        </div>
+    </div>
 
     <p>Status: <span id="status">Connecting to server…</span></p>
     <p>WebRTC: <span id="rtcStatus">Idle</span></p>
@@ -75,11 +222,14 @@
         const $enableGyro = document.getElementById('enableGyro');
         const $gyroDebug = document.getElementById('gyro-debug');
         const $portraitWarning = document.getElementById('portrait-warning');
+        const $controllerUi = document.getElementById('controller-ui');
+        const $tiltBar = document.getElementById('tilt-bar');
 
         let lastSendTime = 0;
         let socket;
         let peer;
         let targetSocketId;
+        let gyroActive = false;
 
         const getUrlParam = name => {
             name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
@@ -92,6 +242,13 @@
             $gyroDebug.textContent = `Beta: ${beta !== null ? beta.toFixed(1) + '°' : 'null (sensor not ready)'}`;
             if (beta === null || beta === undefined) return; // sensor not calibrated yet
             if (!peer || !peer.connected) return;
+
+            // Update tilt bar visualization
+            if ($tiltBar) {
+                const clampedBeta = Math.min(45, Math.max(-45, beta));
+                const tiltPercent = ((clampedBeta + 45) / 90) * 100;
+                $tiltBar.style.width = tiltPercent + '%';
+            }
 
             const now = Date.now();
             if (now - lastSendTime < 50) return;
@@ -116,6 +273,20 @@
                 $instructions.style.display = 'block';
             });
 
+            peer.on('data', rawData => {
+                try {
+                    const data = JSON.parse(rawData);
+                    if (data.type === 'score') {
+                        const scoreDisplay = document.getElementById('score-display');
+                        if (scoreDisplay) {
+                            scoreDisplay.textContent = `SCORE: ${data.value}`;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore parse errors
+                }
+            });
+
             peer.on('close', () => {
                 $rtcStatus.textContent = 'Connection closed';
                 $instructions.style.display = 'none';
@@ -135,37 +306,51 @@
             });
             $enableGyro.textContent = 'Gyroscope active ✅';
             $enableGyro.disabled = true;
+            gyroActive = true;
+            // Show controller UI if in landscape
+            checkOrientation();
         };
 
-        // Check orientation and show portrait warning if needed
+        // Check orientation and show controller UI if in landscape and gyro is active
         const checkOrientation = () => {
             if (window.innerHeight > window.innerWidth) {
                 // Portrait mode
-                $portraitWarning.classList.add('active');
+                if (gyroActive) {
+                    $portraitWarning.classList.add('active');
+                    $controllerUi.classList.remove('active');
+                }
             } else {
                 // Landscape mode
                 $portraitWarning.classList.remove('active');
+                if (gyroActive) {
+                    $controllerUi.classList.add('active');
+                }
             }
         };
 
         // Monitor orientation changes
         window.addEventListener('orientationchange', checkOrientation);
         window.addEventListener('resize', checkOrientation);
-        checkOrientation(); // Check on load
 
+        // Request gyroscope permission and start flow
         const requestGyroPermission = () => {
             if (typeof DeviceOrientationEvent !== 'undefined' &&
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
                 // iOS 13+ requires explicit permission
                 DeviceOrientationEvent.requestPermission()
                     .then(state => {
-                        if (state === 'granted') startGyro();
-                        else $enableGyro.textContent = 'Permission denied';
+                        if (state === 'granted') {
+                            startGyro();
+                            checkOrientation();
+                        } else {
+                            $enableGyro.textContent = 'Permission denied';
+                        }
                     })
                     .catch(console.error);
             } else {
                 // Android and desktop — no permission needed
                 startGyro();
+                checkOrientation();
             }
         };
 

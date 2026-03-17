@@ -95,12 +95,19 @@ function handleRemoteInput(rawData) {
         const normalised = Math.min(1, Math.max(0, (clampedBeta + 45) / 90));
         ship.x = normalised * canvas.width;
     } else if (msg.type === 'fire') {
-        bullets.push({ x: ship.x, y: ship.y - 20 });
+        bullets.push({ x: ship.x - 10, y: ship.y - 100 });
+    }
+}
+
+function sendScoreToController() {
+    if (peer && peer.connected) {
+        peer.send(JSON.stringify({ type: 'score', value: score }));
     }
 }
 
 function startCountdown(duration = 3) {
     countdownValue = duration;
+    sendScoreToController(); // send initial score when game starts
     const countdownInterval = setInterval(() => {
         countdownValue--;
         if (countdownValue <= 0) {
@@ -172,6 +179,7 @@ function update() {
                 meteorites.splice(j, 1);
                 bullets.splice(i, 1);
                 score += 10; // increment score on hit
+                sendScoreToController(); // send updated score to controller
                 if (score > highScore) {
                     highScore = score;
                     localStorage.setItem('highScore', highScore);
@@ -200,6 +208,7 @@ function endGame() {
 function restartGame() {
     gameOver = false;
     score = 0;
+    sendScoreToController(); // send reset score to controller
     bullets.length = 0;
     meteorites.length = 0;
     ship.x = canvas.width / 2;
@@ -207,9 +216,27 @@ function restartGame() {
 }
 
 function draw() {
-    // Draw background image, fallback to black if not loaded
+    // Draw background image with aspect ratio preservation
     if (backgroundImg.complete) {
-        ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+        const imgAspect = backgroundImg.width / backgroundImg.height;
+        const canvasAspect = canvas.width / canvas.height;
+        let drawWidth, drawHeight, drawX = 0, drawY = 0;
+
+        // Calculate dimensions to fill canvas without distortion (like CSS background-size: cover)
+        if (imgAspect > canvasAspect) {
+            // Image is wider, scale by height
+            drawHeight = canvas.height;
+            drawWidth = drawHeight * imgAspect;
+            drawX = (canvas.width - drawWidth) / 2;
+        } else {
+            // Image is taller, scale by width
+            drawWidth = canvas.width;
+            drawHeight = drawWidth / imgAspect;
+            drawY = (canvas.height - drawHeight) / 2;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(backgroundImg, drawX, drawY, drawWidth, drawHeight);
     } else {
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
