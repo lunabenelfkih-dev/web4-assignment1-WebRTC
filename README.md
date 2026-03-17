@@ -14,13 +14,17 @@
 | **March 12** | **Core Gameplay** | Implement collision detection to destroy meteorites and bullets upon impact. | ✅ |
 | **March 13** | **Scoring System** | Add global `score` state. Render current score to Canvas. | ✅ |
 | **March 14** | **Game over** | Create a "Game Over" state that stops the loop and restores the connection overlay to restart. | ✅ |
-| **March 15** | **Remote Feedback** | Enhance `remote.js` with haptic feedback (vibration) or screen flashes when firing. Add a "Start" button to handle gyro permissions. |  |
-| **March 16** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. |  |
-| **March 17** | **Visual Polish** | Replace primitive circles with `Image()` objects for sprites. Implement a parallax scrolling starfield background in the `draw()` loop. |  |
-| **March 18** | **Optimization** | Optimise where needed. If time, implement sound. |  |
-| **March 19** | **Extra** | Implement extra features if time. For example something with the webcam. |  |
+| **March 15** | **Start gyro** | Add a "Start" button to handle gyro permissions and make it's style cleaner. | ✅ |
+| **March 16** | **Visual Polish** | Replace primitive circles images | ✅  |
+| **March 17** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. |  |
+| **March 18** | **Optimization** | Optimise where needed. If time, implement extras. |  |
+| **March 19** | **Extra** | Implement more extra features if time. |  |
 | **March 22** | **FINAL DEADLINE** | Final code cleanup: remove all `console.log` statements, verify documentation, and prepare the final project submission. |  |
 
+## Extra
+- haptic feedback when firing or when catching a meteorite
+- sound when firing, when touching meteorite, when game over, and background music
+- webcam 
 
 ## Day 01 — Concept
 ### WebRTC Space Interceptor
@@ -460,8 +464,8 @@ Result: More responsive steering (smaller angle range = larger movement ratio).
 - Monitors `orientationchange` and `resize` events
 - Dynamically shows/hides based on screen dimensions
 
-## Day 13 — Add visuals
-I added visuals for the desktop game as well as for the remote. I made them in Figma and then each time added them to the game in the JS code.
+## Day 13 — Make it more visual
+I added visuals for the desktop game as well as for the remote. I made them in Figma and then each time added them to the game in the JS code. I also made sure the typography matches the style of the game and is coherent over the whole application.
 
 
 ### add replay game option when game is over and make sure the old game starts again and the meteorite positions start from 0? - NOT YET
