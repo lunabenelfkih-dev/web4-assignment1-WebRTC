@@ -5,10 +5,288 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebRTC Controller</title>
+    <style>
+        /* Global reset to remove default margins and ensure full viewport coverage */
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Helvetica, sans-serif;
+        }
+
+        /* Portrait mode warning - shown when screen is in portrait orientation */
+        #portrait-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #050C12;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            box-sizing: border-box;
+            font-family: Helvetica, sans-serif;
+        }
+
+        #portrait-warning.active {
+            display: flex;
+        }
+
+        #portrait-warning h1 {
+            font-size: 2.5rem;
+            margin: 0 0 1rem;
+        }
+
+        #portrait-warning p {
+            font-size: 1.3rem;
+            margin: 0;
+            color: #ccc;
+        }
+
+        /* Game controller UI overlay */
+        #controller-ui {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background: #050C12;
+            background-image:
+                url('/assets/controller-stars.png'),
+                url('/assets/controller-mist.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        #controller-ui::before {
+            display: none;
+        }
+
+        #controller-ui.active {
+            display: flex;
+        }
+
+        .controller-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Control center wrapper for tilt and fire icons */
+        .control-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 80px;
+        }
+
+        /* Tilt/Gyroscope indicator */
+        .tilt-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .tilt-label {
+            font-size: 12px;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            text-transform: uppercase;
+        }
+
+        .tilt-bar-container {
+            width: 300px;
+            height: 40px;
+            border: 2px solid rgba(147, 197, 253, 0.4);
+            display: flex;
+            overflow: hidden;
+            background: rgba(5, 12, 18, 0.5);
+        }
+
+        .tilt-bar {
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #ea580c 50%, transparent);
+            width: 0%;
+            transition: width 0.1s ease-out;
+            box-shadow: 0 0 20px rgba(234, 88, 12, 0.6);
+        }
+
+        .tilt-bar.active {
+            width: 60%;
+            background: linear-gradient(90deg, transparent, #ff7c00 50%, transparent);
+            box-shadow: 0 0 30px rgba(255, 124, 0, 0.8);
+        }
+
+        /* Fire icons on sides */
+        .fire-icon {
+            width: 150px;
+            height: 150px;
+            opacity: 0.9;
+            flex-shrink: 0;
+        }
+
+        .fire-icon.left {
+            order: -1;
+        }
+
+        .fire-icon.right {
+            order: 1;
+        }
+
+        /* Score display */
+        .score-display {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: rgba(147, 197, 253, 0.9);
+        }
+
+        /* Start button overlay - shown before game begins */
+        #start-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #050C12;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            box-sizing: border-box;
+            font-family: Helvetica, sans-serif;
+        }
+
+        #start-overlay.active {
+            display: flex;
+        }
+
+        #start-overlay h1 {
+            font-size: 3rem;
+            margin: 0 0 2rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        #start-overlay p {
+            font-size: 1.2rem;
+            margin: 0 0 3rem;
+            color: rgba(147, 197, 253, 0.9);
+            letter-spacing: 1px;
+        }
+
+        #start-button {
+            padding: 1.5rem 4rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #ff7c00, #ea580c);
+            color: white;
+            border: 3px solid rgba(234, 88, 12, 0.8);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(255, 124, 0, 0.5);
+            font-family: Helvetica, sans-serif;
+        }
+
+        #start-button:hover {
+            background: linear-gradient(135deg, #ff8c20, #ff6618);
+            box-shadow: 0 0 50px rgba(255, 124, 0, 0.8);
+            transform: scale(1.05);
+        }
+
+        #start-button:active {
+            transform: scale(0.98);
+        }
+
+        #start-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: scale(1);
+        }
+
+        #status-message {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: rgba(147, 197, 253, 0.7);
+            letter-spacing: 1px;
+            min-height: 20px;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>WebRTC Controller</h1>
+    <!-- Portrait mode warning overlay -->
+    <div id="portrait-warning">
+        <h1>Rotate to Landscape</h1>
+        <p>Please rotate your phone to landscape mode to play</p>
+    </div>
+
+    <!-- Start overlay with button -->
+    <div id="start-overlay" class="active">
+        <h1>SPACE SHOOTER</h1>
+        <p>Ready to play?</p>
+        <button id="start-button">START</button>
+        <div id="status-message"></div>
+    </div>
+
+    <!-- Game controller UI overlay -->
+    <div id="controller-ui">
+        <div class="score-display" id="score-display">SCORE: 0</div>
+        <div class="controller-container">
+            <div class="control-center">
+                <!-- Left fire icon -->
+                <img src="/assets/fire.svg" alt="Fire" class="fire-icon left">
+
+                <!-- Tilt indicator overlay -->
+                <div class="tilt-indicator">
+                    <div class="tilt-label">TILT</div>
+                    <div class="tilt-bar-container">
+                        <div class="tilt-bar" id="tilt-bar"></div>
+                    </div>
+                </div>
+
+                <!-- Right fire icon -->
+                <img src="/assets/fire.svg" alt="Fire" class="fire-icon right">
+            </div>
+        </div>
+    </div>
 
     <p>Status: <span id="status">Connecting to server…</span></p>
     <p>WebRTC: <span id="rtcStatus">Idle</span></p>
@@ -17,11 +295,7 @@
         Tilt your phone left/right to move. Tap to fire.
     </p>
 
-    <p id="gyro-debug" style="font-family:monospace; font-size:1rem; color:#666;">Gamma: —</p>
-
-    <button id="enableGyro" style="padding:1rem 2rem; font-size:1.2rem">
-        Tap to enable gyroscope
-    </button>
+    <p id="gyro-debug" style="font-family:monospace; font-size:1rem; color:#666;">Beta: —</p>
 
     <script src="/socket.io/socket.io.js"></script>
     <!-- simple-peer: WebRTC data channel abstraction -->
@@ -30,13 +304,19 @@
         const $status = document.getElementById('status');
         const $rtcStatus = document.getElementById('rtcStatus');
         const $instructions = document.getElementById('instructions');
-        const $enableGyro = document.getElementById('enableGyro');
+        const $startButton = document.getElementById('start-button');
+        const $statusMessage = document.getElementById('status-message');
         const $gyroDebug = document.getElementById('gyro-debug');
+        const $portraitWarning = document.getElementById('portrait-warning');
+        const $startOverlay = document.getElementById('start-overlay');
+        const $controllerUi = document.getElementById('controller-ui');
+        const $tiltBar = document.getElementById('tilt-bar');
 
         let lastSendTime = 0;
         let socket;
         let peer;
         let targetSocketId;
+        let gyroActive = false;
 
         const getUrlParam = name => {
             name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
@@ -45,16 +325,23 @@
             return results === null ? false : decodeURIComponent(results[1].replace(/\+/g, ' '));
         };
 
-        const sendGyro = (gamma) => {
-            $gyroDebug.textContent = `Gamma: ${gamma !== null ? gamma.toFixed(1) + '°' : 'null (sensor not ready)'}`;
-            if (gamma === null || gamma === undefined) return; // sensor not calibrated yet
+        const sendGyro = (beta) => {
+            $gyroDebug.textContent = `Beta: ${beta !== null ? beta.toFixed(1) + '°' : 'null (sensor not ready)'}`;
+            if (beta === null || beta === undefined) return; // sensor not calibrated yet
             if (!peer || !peer.connected) return;
+
+            // Update tilt bar visualization
+            if ($tiltBar) {
+                const clampedBeta = Math.min(45, Math.max(-45, beta));
+                const tiltPercent = ((clampedBeta + 45) / 90) * 100;
+                $tiltBar.style.width = tiltPercent + '%';
+            }
 
             const now = Date.now();
             if (now - lastSendTime < 50) return;
             lastSendTime = now;
 
-            peer.send(JSON.stringify({ type: 'move', x: gamma }));
+            peer.send(JSON.stringify({ type: 'move', x: beta }));
         };
 
         // Simple Peer setup (Initiator)
@@ -73,6 +360,20 @@
                 $instructions.style.display = 'block';
             });
 
+            peer.on('data', rawData => {
+                try {
+                    const data = JSON.parse(rawData);
+                    if (data.type === 'score') {
+                        const scoreDisplay = document.getElementById('score-display');
+                        if (scoreDisplay) {
+                            scoreDisplay.textContent = `SCORE: ${data.value}`;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore parse errors
+                }
+            });
+
             peer.on('close', () => {
                 $rtcStatus.textContent = 'Connection closed';
                 $instructions.style.display = 'none';
@@ -87,29 +388,74 @@
         // Gyroscope input
         const startGyro = () => {
             window.addEventListener('deviceorientation', e => {
-                sendGyro(e.gamma);
+                // Use beta for landscape mode tilt (left/right rotation)
+                sendGyro(e.beta);
             });
-            $enableGyro.textContent = 'Gyroscope active ✅';
-            $enableGyro.disabled = true;
+            $startButton.textContent = 'Gyroscope active ✅';
+            $startButton.disabled = true;
+            gyroActive = true;
+            // Show controller UI if in landscape
+            checkOrientation();
         };
 
+        // Check orientation and show controller UI if in landscape and gyro is active
+        const checkOrientation = () => {
+            if (window.innerHeight > window.innerWidth) {
+                // Portrait mode
+                if (gyroActive) {
+                    $portraitWarning.classList.add('active');
+                    $controllerUi.classList.remove('active');
+                    $startOverlay.classList.remove('active');
+                }
+            } else {
+                // Landscape mode
+                $portraitWarning.classList.remove('active');
+                if (gyroActive) {
+                    $controllerUi.classList.add('active');
+                    $startOverlay.classList.remove('active');
+                }
+            }
+        };
+
+        // Monitor orientation changes
+        window.addEventListener('orientationchange', checkOrientation);
+        window.addEventListener('resize', checkOrientation);
+
+        // Request gyroscope permission and start flow
         const requestGyroPermission = () => {
+            $startButton.disabled = true;
+            $statusMessage.textContent = 'Requesting permissions...';
+
             if (typeof DeviceOrientationEvent !== 'undefined' &&
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
                 // iOS 13+ requires explicit permission
                 DeviceOrientationEvent.requestPermission()
                     .then(state => {
-                        if (state === 'granted') startGyro();
-                        else $enableGyro.textContent = 'Permission denied';
+                        if (state === 'granted') {
+                            $statusMessage.textContent = '';
+                            startGyro();
+                            checkOrientation();
+                        } else {
+                            $startButton.textContent = 'Permission denied - try again';
+                            $startButton.disabled = false;
+                            $statusMessage.textContent = 'Permission was denied';
+                        }
                     })
-                    .catch(console.error);
+                    .catch(err => {
+                        console.error('Permission error:', err);
+                        $startButton.textContent = 'Error - try again';
+                        $startButton.disabled = false;
+                        $statusMessage.textContent = 'Error requesting permission';
+                    });
             } else {
                 // Android and desktop — no permission needed
+                $statusMessage.textContent = '';
                 startGyro();
+                checkOrientation();
             }
         };
 
-        $enableGyro.addEventListener('click', requestGyroPermission);
+        $startButton.addEventListener('click', requestGyroPermission);
 
         const init = () => {
             targetSocketId = getUrlParam('id');

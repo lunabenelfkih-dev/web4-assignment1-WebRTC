@@ -11,16 +11,20 @@
 | **March 8** | **Falling stuff logic** | Start implementing the falling stuff logic | ✅ |
 | **March 10** | **UX & Connection** | Create a connection overlay in `game.js` that auto-hides the qr code when a phone is connected. | ✅ |
 | **March 11** | **Optimize game js** | Optimize `game.js` |  |
-| **March 12** | **Core Gameplay** | Implement collision detection to destroy meteorites and bullets upon impact. |  |
-| **March 13** | **Scoring System** | Add global `score` state. Render current score to Canvas. |  |
-| **March 14** | **Game over** | Create a "Game Over" state that stops the loop and restores the connection overlay to restart. |  |
-| **March 15** | **Remote Feedback** | Enhance `remote.js` with haptic feedback (vibration) or screen flashes when firing. Add a "Start" button to handle gyro permissions. |  |
-| **March 16** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. |  |
-| **March 17** | **Visual Polish** | Replace primitive circles with `Image()` objects for sprites. Implement a parallax scrolling starfield background in the `draw()` loop. |  |
-| **March 18** | **Optimization** | Optimise where needed. If time, implement sound. |  |
-| **March 19** | **Extra** | Implement extra features if time. For example something with the webcam. |  |
+| **March 12** | **Core Gameplay** | Implement collision detection to destroy meteorites and bullets upon impact. | ✅ |
+| **March 13** | **Scoring System** | Add global `score` state. Render current score to Canvas. | ✅ |
+| **March 14** | **Game over** | Create a "Game Over" state that stops the loop and restores the connection overlay to restart. | ✅ |
+| **March 15** | **Start gyro** | Add a "Start" button to handle gyro permissions and make it's style cleaner. | ✅ |
+| **March 16** | **Visual Polish** | Replace primitive circles images | ✅  |
+| **March 17** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. |  |
+| **March 18** | **Optimization** | Optimise where needed. If time, implement extras. |  |
+| **March 19** | **Extra** | Implement more extra features if time. |  |
 | **March 22** | **FINAL DEADLINE** | Final code cleanup: remove all `console.log` statements, verify documentation, and prepare the final project submission. |  |
 
+## Extra
+- haptic feedback when firing or when catching a meteorite
+- sound when firing, when touching meteorite, when game over, and background music
+- webcam 
 
 ## Day 01 — Concept
 ### WebRTC Space Interceptor
@@ -389,3 +393,87 @@ function draw() {
     });
 }
 ```
+## Day 07 — Optimize game.js
+
+Updated the loop from game.js to remove the bullets and meteorites from the arrays to prevent memory issues and lagging. There's no need for the array to keep all of them at all times. Bullets and meteorites will be removed when they go out of the screen.
+
+## Day 08 — Detect overlapping and delete meteorites and bullets
+
+### code from AI
+I looked up how to check collision through JS and found that i could do so through `hypot()`. I then used AI to help me to implement this.
+
+```js
+    // Collision detection: bullets vs meteorites
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        for (let j = meteorites.length - 1; j >= 0; j--) {
+            const dist = Math.hypot(bullets[i].x - meteorites[j].x, bullets[i].y - meteorites[j].y);
+            if (dist < 20) { // collision threshold (bullet ~2px + meteorite ~15px radius)
+                meteorites.splice(j, 1);
+                bullets.splice(i, 1);
+                break; // bullet destroyed, move to next bullet
+            }
+        }
+    }
+```
+## Day 09 — Score logic
+Add score logic and show the current score and high score on the screen.
+
+## Day 10 — Game over
+Implement logic so that when a meteorite's y value is lower than the ship's y value, it's game over. I also added a count down before the game starts and some logic to make sure the game only starts when the user is connected. Because I noticed that otherwise the game would sometimes be over even without it having started.
+
+## Day 11 — Make game more playable
+I noticed that it was really hard to play because in the beginning they were immediately way too much meteorites so decided to look into that. I added a difficulty scale so the higher the score, the more difficult the game gets.
+
+## Day 12 — Landscape Mode Refactoring
+While testing the game i noticed that it does not feel natural to hold the phone vertically so i wanted to implement something so the user has to turn their phone in landscape to play the game. This would give more the feeling of a real game remote.
+
+### what AI recommended
+#### My prompt
+"I think it might be better to use the phone in landscape mode to play the game, is that hard to implement?"
+#### Gemini's response
+Switching to landscape mode is a great idea for game ergonomics—it feels more like holding a traditional controller! It isn't hard to implement, but it requires changing which axis of the phone's gyroscope we listen to.
+
+The Logic: Beta vs. Gamma
+In your current code, you are using Gamma, which measures the "tilt" when holding the phone vertically (portrait). When you turn the phone sideways (landscape), that same side-to-side motion is now measured by the Beta axis.
+
+Portrait: Gamma is side-to-side.
+
+Landscape: Beta is side-to-side.
+
+
+### Refactoring the game logic
+
+**Gyroscope Axis Change:**
+- Changed from **`gamma`** (portrait: left/right tilt) to **`beta`** (landscape: left/right rotation)
+- Beta ranges ≈ −45° to +45° when phone is landscape
+
+**Remote Input Mapping:**
+```javascript
+// Map landscape beta (-45..45) to canvas width
+const clampedBeta = Math.min(45, Math.max(-45, msg.x));
+const normalised = Math.min(1, Math.max(0, (clampedBeta + 45) / 90));
+ship.x = normalised * canvas.width;
+```
+Result: More responsive steering (smaller angle range = larger movement ratio).
+
+### Portrait Mode Warning Overlay
+
+**In `controller.html`:**
+- Added CSS overlay for portrait orientation detection
+- Displays: **"📱 Rotate to Landscape"** message
+- Monitors `orientationchange` and `resize` events
+- Dynamically shows/hides based on screen dimensions
+
+## Day 13 — Make it more visual
+I added visuals for the desktop game as well as for the remote. I made them in Figma and then each time added them to the game in the JS code. I also made sure the typography matches the style of the game and is coherent over the whole application.
+
+
+### add replay game option when game is over and make sure the old game starts again and the meteorite positions start from 0? - NOT YET
+
+### make sure the game over screen stays 5sec before showing the qr code again - NOT YET
+
+### ask on console to play again - NOT YET
+
+
+
+
