@@ -467,6 +467,10 @@ Result: More responsive steering (smaller angle range = larger movement ratio).
 ## Day 13 — Make it more visual
 I added visuals for the desktop game as well as for the remote. I made them in Figma and then each time added them to the game in the JS code. I also made sure the typography matches the style of the game and is coherent over the whole application.
 
+## Day 14 — Restart game
+Implement logic to restart the game from the desktop and the phone when the game is over.
+
+
 
 ### add replay game option when game is over and make sure the old game starts again and the meteorite positions start from 0? - NOT YET
 

@@ -248,6 +248,71 @@
             letter-spacing: 1px;
             min-height: 20px;
         }
+
+        /* Game Over overlay on phone */
+        #game-over-overlay-phone {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 12, 18, 0.95);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            box-sizing: border-box;
+            font-family: Helvetica, sans-serif;
+        }
+
+        #game-over-overlay-phone.active {
+            display: flex;
+        }
+
+        #game-over-overlay-phone h2 {
+            font-size: 3rem;
+            margin: 0 0 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        #game-over-overlay-phone p {
+            font-size: 1.8rem;
+            margin: 0 0 2.5rem;
+            color: rgba(147, 197, 253, 0.9);
+            letter-spacing: 1px;
+        }
+
+        #play-again-btn {
+            padding: 1.5rem 3rem;
+            font-size: 1.3rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #ff7c00, #ea580c);
+            color: white;
+            border: 3px solid rgba(234, 88, 12, 0.8);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(255, 124, 0, 0.5);
+            font-family: Helvetica, sans-serif;
+        }
+
+        #play-again-btn:hover {
+            background: linear-gradient(135deg, #ff8c20, #ff6618);
+            box-shadow: 0 0 50px rgba(255, 124, 0, 0.8);
+            transform: scale(1.05);
+        }
+
+        #play-again-btn:active {
+            transform: scale(0.98);
+        }
     </style>
 </head>
 
@@ -288,6 +353,13 @@
         </div>
     </div>
 
+    <!-- Game Over overlay on phone -->
+    <div id="game-over-overlay-phone">
+        <h2>GAME OVER</h2>
+        <p>Final Score: <span id="final-score-phone">0</span></p>
+        <button id="play-again-btn">PLAY AGAIN</button>
+    </div>
+
     <p>Status: <span id="status">Connecting to server…</span></p>
     <p>WebRTC: <span id="rtcStatus">Idle</span></p>
 
@@ -311,6 +383,9 @@
         const $startOverlay = document.getElementById('start-overlay');
         const $controllerUi = document.getElementById('controller-ui');
         const $tiltBar = document.getElementById('tilt-bar');
+        const $gameOverOverlayPhone = document.getElementById('game-over-overlay-phone');
+        const $finalScorePhone = document.getElementById('final-score-phone');
+        const $playAgainBtn = document.getElementById('play-again-btn');
 
         let lastSendTime = 0;
         let socket;
@@ -367,6 +442,11 @@
                         const scoreDisplay = document.getElementById('score-display');
                         if (scoreDisplay) {
                             scoreDisplay.textContent = `SCORE: ${data.value}`;
+                        }
+                    } else if (data.type === 'game_over') {
+                        // Game is over; show the overlay with play again button
+                        if ($gameOverOverlayPhone) {
+                            $gameOverOverlayPhone.classList.add('active');
                         }
                     }
                 } catch (e) {
@@ -435,6 +515,10 @@
                             $statusMessage.textContent = '';
                             startGyro();
                             checkOrientation();
+                            // Send gyro_ready message to PC to start countdown
+                            if (peer && peer.connected) {
+                                peer.send(JSON.stringify({ type: 'gyro_ready' }));
+                            }
                         } else {
                             $startButton.textContent = 'Permission denied - try again';
                             $startButton.disabled = false;
@@ -452,10 +536,26 @@
                 $statusMessage.textContent = '';
                 startGyro();
                 checkOrientation();
+                // Send gyro_ready message to PC to start countdown
+                if (peer && peer.connected) {
+                    peer.send(JSON.stringify({ type: 'gyro_ready' }));
+                }
             }
         };
 
         $startButton.addEventListener('click', requestGyroPermission);
+
+        // Handle play again button click
+        $playAgainBtn.addEventListener('click', () => {
+            // Hide game over overlay
+            if ($gameOverOverlayPhone) {
+                $gameOverOverlayPhone.classList.remove('active');
+            }
+            // Send restart request to PC
+            if (peer && peer.connected) {
+                peer.send(JSON.stringify({ type: 'restart_request' }));
+            }
+        });
 
         const init = () => {
             targetSocketId = getUrlParam('id');

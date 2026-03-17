@@ -1,6 +1,5 @@
-let socket, pc, dataChannel;
+let socket, peer;
 const targetSocketId = new URLSearchParams(window.location.search).get('id');
-const RTC_CONFIG = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
 function init() {
     if (!targetSocketId) {
@@ -10,13 +9,10 @@ function init() {
 
     socket = io();
 
-    // Signal handler must live inside init() — socket is undefined before this point
-    socket.on('signal', async (fromId, data) => {
-        if (data.type === 'answer') {
-            await pc.setRemoteDescription(new RTCSessionDescription(data));
-        } else if (data.type === 'candidate') {
-            try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); }
-            catch (e) { console.warn('ICE candidate error:', e); }
+    // Signal handler for incoming WebRTC signals
+    socket.on('signal', (fromId, data) => {
+        if (peer) {
+            peer.signal(data);
         }
     });
 
@@ -24,8 +20,8 @@ function init() {
 
     // Click/Touch to fire
     window.addEventListener('touchstart', () => {
-        if (dataChannel?.readyState === 'open') {
-            dataChannel.send(JSON.stringify({ type: 'fire' }));
+        if (peer && peer.connected) {
+            peer.send(JSON.stringify({ type: 'fire' }));
         }
     }, { passive: true });
 
@@ -50,27 +46,67 @@ function init() {
     }
 }
 
-async function startWebRTC() {
-    pc = new RTCPeerConnection(RTC_CONFIG);
-    dataChannel = pc.createDataChannel('controls');
+function startWebRTC() {
+    peer = new SimplePeer({ initiator: true, trickle: false });
 
-    dataChannel.onopen = () => console.log('Data channel open — tilt to play!');
-    dataChannel.onclose = () => console.log('Data channel closed');
+    peer.on('signal', data => {
+        socket.emit('signal', targetSocketId, data);
+    });
 
-    pc.onicecandidate = ({ candidate }) => {
-        if (candidate) socket.emit('signal', targetSocketId, { type: 'candidate', candidate });
-    };
+    peer.on('connect', () => {
+        console.log('WebRTC connected — tilt to play!');
+    });
 
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    socket.emit('signal', targetSocketId, { type: 'offer', sdp: offer.sdp });
+    peer.on('data', rawData => {
+        try {
+            const data = JSON.parse(rawData);
+            if (data.type === 'game_over') {
+                showGameOverScreen();
+            }
+        } catch (e) {
+            // Ignore parse errors
+        }
+    });
+
+    peer.on('close', () => {
+        console.log('WebRTC connection closed');
+    });
+
+    peer.on('error', err => {
+        console.error('WebRTC error:', err);
+    });
+}
+
+function showGameOverScreen() {
+    // Create full-screen game over overlay with RESTART button
+    const overlay = document.createElement('div');
+    overlay.id = 'game-over-screen';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,12,18,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:white;text-align:center;';
+
+    const title = document.createElement('h1');
+    title.textContent = 'GAME OVER';
+    title.style.cssText = 'font-size:3rem;margin:0 0 2rem;font-weight:bold;letter-spacing:2px;';
+    overlay.appendChild(title);
+
+    const btn = document.createElement('button');
+    btn.textContent = 'RESTART';
+    btn.style.cssText = 'padding:1.5rem 3rem;font-size:1.5rem;font-weight:bold;letter-spacing:2px;text-transform:uppercase;background:linear-gradient(135deg,#ff7c00,#ea580c);color:white;border:3px solid rgba(234,88,12,0.8);border-radius:12px;cursor:pointer;box-shadow:0 0 30px rgba(255,124,0,0.5);';
+    btn.addEventListener('click', () => {
+        overlay.remove();
+        if (peer && peer.connected) {
+            peer.send(JSON.stringify({ type: 'restart_request' }));
+        }
+    });
+    overlay.appendChild(btn);
+
+    document.body.appendChild(overlay);
 }
 
 function startGyro() {
     window.addEventListener('deviceorientation', (e) => {
-        if (dataChannel?.readyState === 'open') {
+        if (peer && peer.connected) {
             // Use beta for landscape mode tilt (left/right rotation)
-            dataChannel.send(JSON.stringify({ type: 'move', x: e.beta }));
+            peer.send(JSON.stringify({ type: 'move', x: e.beta }));
         }
     });
 }
