@@ -14,6 +14,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
+            font-family: Helvetica, sans-serif;
         }
 
         /* Portrait mode warning - shown when screen is in portrait orientation */
@@ -24,7 +25,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95);
+            background: #050C12;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -33,7 +34,7 @@
             text-align: center;
             padding: 2rem;
             box-sizing: border-box;
-            font-family: Arial, sans-serif;
+            font-family: Helvetica, sans-serif;
         }
 
         #portrait-warning.active {
@@ -64,7 +65,7 @@
             align-items: center;
             justify-content: center;
             color: white;
-            font-family: 'Inter', Arial, sans-serif;
+            font-family: Helvetica, sans-serif;
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -167,14 +168,102 @@
             letter-spacing: 2px;
             color: rgba(147, 197, 253, 0.9);
         }
+
+        /* Start button overlay - shown before game begins */
+        #start-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #050C12;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            box-sizing: border-box;
+            font-family: Helvetica, sans-serif;
+        }
+
+        #start-overlay.active {
+            display: flex;
+        }
+
+        #start-overlay h1 {
+            font-size: 3rem;
+            margin: 0 0 2rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        #start-overlay p {
+            font-size: 1.2rem;
+            margin: 0 0 3rem;
+            color: rgba(147, 197, 253, 0.9);
+            letter-spacing: 1px;
+        }
+
+        #start-button {
+            padding: 1.5rem 4rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #ff7c00, #ea580c);
+            color: white;
+            border: 3px solid rgba(234, 88, 12, 0.8);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(255, 124, 0, 0.5);
+            font-family: Helvetica, sans-serif;
+        }
+
+        #start-button:hover {
+            background: linear-gradient(135deg, #ff8c20, #ff6618);
+            box-shadow: 0 0 50px rgba(255, 124, 0, 0.8);
+            transform: scale(1.05);
+        }
+
+        #start-button:active {
+            transform: scale(0.98);
+        }
+
+        #start-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: scale(1);
+        }
+
+        #status-message {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: rgba(147, 197, 253, 0.7);
+            letter-spacing: 1px;
+            min-height: 20px;
+        }
     </style>
 </head>
 
 <body>
     <!-- Portrait mode warning overlay -->
     <div id="portrait-warning">
-        <h1>📱 Rotate to Landscape</h1>
+        <h1>Rotate to Landscape</h1>
         <p>Please rotate your phone to landscape mode to play</p>
+    </div>
+
+    <!-- Start overlay with button -->
+    <div id="start-overlay" class="active">
+        <h1>SPACE SHOOTER</h1>
+        <p>Ready to play?</p>
+        <button id="start-button">START</button>
+        <div id="status-message"></div>
     </div>
 
     <!-- Game controller UI overlay -->
@@ -208,10 +297,6 @@
 
     <p id="gyro-debug" style="font-family:monospace; font-size:1rem; color:#666;">Beta: —</p>
 
-    <button id="enableGyro" style="padding:1rem 2rem; font-size:1.2rem">
-        Tap to enable gyroscope
-    </button>
-
     <script src="/socket.io/socket.io.js"></script>
     <!-- simple-peer: WebRTC data channel abstraction -->
     <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
@@ -219,9 +304,11 @@
         const $status = document.getElementById('status');
         const $rtcStatus = document.getElementById('rtcStatus');
         const $instructions = document.getElementById('instructions');
-        const $enableGyro = document.getElementById('enableGyro');
+        const $startButton = document.getElementById('start-button');
+        const $statusMessage = document.getElementById('status-message');
         const $gyroDebug = document.getElementById('gyro-debug');
         const $portraitWarning = document.getElementById('portrait-warning');
+        const $startOverlay = document.getElementById('start-overlay');
         const $controllerUi = document.getElementById('controller-ui');
         const $tiltBar = document.getElementById('tilt-bar');
 
@@ -304,8 +391,8 @@
                 // Use beta for landscape mode tilt (left/right rotation)
                 sendGyro(e.beta);
             });
-            $enableGyro.textContent = 'Gyroscope active ✅';
-            $enableGyro.disabled = true;
+            $startButton.textContent = 'Gyroscope active ✅';
+            $startButton.disabled = true;
             gyroActive = true;
             // Show controller UI if in landscape
             checkOrientation();
@@ -318,12 +405,14 @@
                 if (gyroActive) {
                     $portraitWarning.classList.add('active');
                     $controllerUi.classList.remove('active');
+                    $startOverlay.classList.remove('active');
                 }
             } else {
                 // Landscape mode
                 $portraitWarning.classList.remove('active');
                 if (gyroActive) {
                     $controllerUi.classList.add('active');
+                    $startOverlay.classList.remove('active');
                 }
             }
         };
@@ -334,27 +423,39 @@
 
         // Request gyroscope permission and start flow
         const requestGyroPermission = () => {
+            $startButton.disabled = true;
+            $statusMessage.textContent = 'Requesting permissions...';
+
             if (typeof DeviceOrientationEvent !== 'undefined' &&
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
                 // iOS 13+ requires explicit permission
                 DeviceOrientationEvent.requestPermission()
                     .then(state => {
                         if (state === 'granted') {
+                            $statusMessage.textContent = '';
                             startGyro();
                             checkOrientation();
                         } else {
-                            $enableGyro.textContent = 'Permission denied';
+                            $startButton.textContent = 'Permission denied - try again';
+                            $startButton.disabled = false;
+                            $statusMessage.textContent = 'Permission was denied';
                         }
                     })
-                    .catch(console.error);
+                    .catch(err => {
+                        console.error('Permission error:', err);
+                        $startButton.textContent = 'Error - try again';
+                        $startButton.disabled = false;
+                        $statusMessage.textContent = 'Error requesting permission';
+                    });
             } else {
                 // Android and desktop — no permission needed
+                $statusMessage.textContent = '';
                 startGyro();
                 checkOrientation();
             }
         };
 
-        $enableGyro.addEventListener('click', requestGyroPermission);
+        $startButton.addEventListener('click', requestGyroPermission);
 
         const init = () => {
             targetSocketId = getUrlParam('id');

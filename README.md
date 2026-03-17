@@ -460,15 +460,16 @@ Result: More responsive steering (smaller angle range = larger movement ratio).
 - Monitors `orientationchange` and `resize` events
 - Dynamically shows/hides based on screen dimensions
 
-## Day 13 — 
+## Day 13 — Add visuals
+I added visuals for the desktop game as well as for the remote. I made them in Figma and then each time added them to the game in the JS code.
 
 
-### add replay game option? - NOT YET
+### add replay game option when game is over and make sure the old game starts again and the meteorite positions start from 0? - NOT YET
 
-### updating the code - NOT YET
-I quickly noticed that the meteorites were falling way to quick and with way to many so decided to tackle that.
+### make sure the game over screen stays 5sec before showing the qr code again - NOT YET
 
-### usability of the remote - NOT YET
-While testing the game i noticed that it does not feel natural to hold the phone vertically so i wanted to implement something so the user has to turn their phone to play the game. This would give more the feeling of a real game remote.
+### ask on console to play again - NOT YET
+
+
 
 
