@@ -444,11 +444,7 @@
                             scoreDisplay.textContent = `SCORE: ${data.value}`;
                         }
                     } else if (data.type === 'game_over') {
-                        // Game is over; show the overlay with final score and play again button
-                        const scoreValue = data.value !== undefined ? data.value : 0;
-                        if ($finalScorePhone) {
-                            $finalScorePhone.textContent = scoreValue;
-                        }
+                        // Game is over; show the overlay with play again button
                         if ($gameOverOverlayPhone) {
                             $gameOverOverlayPhone.classList.add('active');
                         }

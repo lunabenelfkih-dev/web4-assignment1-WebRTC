@@ -69,20 +69,41 @@ socket.on('signal', (fromId, data) => {
     });
 
     peer.on('close', () => {
-        const overlay = document.getElementById('connection-overlay');
-        if (overlay) overlay.classList.remove('hidden');
+        resetOnDisconnect();
         peer = null;
     });
 
     peer.on('error', err => {
         console.error('[game] peer error:', err);
-        const overlay = document.getElementById('connection-overlay');
-        if (overlay) overlay.classList.remove('hidden');
+        resetOnDisconnect();
         peer = null;
     });
 
     peer.signal(data);
 });
+
+function resetOnDisconnect() {
+    // Hide game over overlay
+    const gameOverOverlay = document.getElementById('game-over-overlay');
+    if (gameOverOverlay) {
+        gameOverOverlay.classList.add('hidden');
+    }
+
+    // Reset game state
+    gameStarted = false;
+    gameOver = false;
+    countdownValue = 0;
+
+    // Clear physics arrays
+    bullets.length = 0;
+    meteorites.length = 0;
+
+    // Show connection overlay with QR code
+    const connectionOverlay = document.getElementById('connection-overlay');
+    if (connectionOverlay) {
+        connectionOverlay.classList.remove('hidden');
+    }
+}
 
 function handleRemoteInput(rawData) {
     const msg = JSON.parse(rawData);
@@ -208,9 +229,15 @@ function endGame() {
     gameOver = true;
     gameStarted = false; // Stop the game
 
+    // Hide the QR code connection overlay
+    const connectionOverlay = document.getElementById('connection-overlay');
+    if (connectionOverlay) {
+        connectionOverlay.classList.add('hidden');
+    }
+
     // Send game over message to controller so it can show restart button
     if (peer && peer.connected) {
-        peer.send(JSON.stringify({ type: 'game_over', value: score }));
+        peer.send(JSON.stringify({ type: 'game_over' }));
     }
 
     // Show the game over overlay with final score
