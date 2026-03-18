@@ -210,3 +210,74 @@ body {
     display: none !important;
     pointer-events: none;
 }
+
+/* REMOTE.JS STYLES - Dynamically created elements */
+.gyro-permission-btn {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: var(--font-size-md);
+    background: linear-gradient(135deg, #ff7c00, #ea580c);
+    color: var(--color-white);
+    border: 3px solid rgba(234, 88, 12, 0.8);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: 0 0 30px rgba(255, 124, 0, 0.5);
+}
+
+.gyro-permission-btn:hover {
+    background: linear-gradient(135deg, #ff8c20, #ff6618);
+    box-shadow: 0 0 50px rgba(255, 124, 0, 0.8);
+    transform: translate(-50%, -50%) scale(1.05);
+}
+
+.game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(5, 12, 18, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    color: var(--color-white);
+    text-align: center;
+}
+
+.game-over-overlay h1 {
+    font-size: var(--font-size-2xl);
+    margin: 0 0 var(--spacing-xl);
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.game-over-restart-btn {
+    padding: 1.5rem 3rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #ff7c00, #ea580c);
+    color: var(--color-white);
+    border: 3px solid rgba(234, 88, 12, 0.8);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: 0 0 30px rgba(255, 124, 0, 0.5);
+}
+
+.game-over-restart-btn:hover {
+    background: linear-gradient(135deg, #ff8c20, #ff6618);
+    box-shadow: 0 0 50px rgba(255, 124, 0, 0.8);
+    transform: scale(1.05);
+}
+
+.game-over-restart-btn:active {
+    transform: scale(0.98);
+}

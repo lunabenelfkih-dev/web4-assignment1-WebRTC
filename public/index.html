@@ -10,17 +10,14 @@
 </head>
 
 <body>
-    <!-- Music toggle button -->
     <button id="music-toggle-btn" class="music-btn paused"></button>
 
-    <!-- ── Overlay: visible until controller data channel opens ── -->
     <div id="connection-overlay">
         <h2>Scan to connect your controller</h2>
         <div id="qr"></div>
         <p id="overlay-subtitle">Open on your phone and tilt to play</p>
     </div>
 
-    <!-- ── Game Over overlay with final score and restart button ── -->
     <div id="game-over-overlay" class="hidden">
         <h2>GAME OVER</h2>
         <p>Final Score: <span id="final-score">0</span></p>
@@ -29,13 +26,9 @@
 
     <canvas id="gameCanvas"></canvas>
 
-    <!-- socket.io must load before game.js so io() is available -->
     <script src="/socket.io/socket.io.js"></script>
-    <!-- qrcode-generator: used by game.js's showControllerUrl() -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-    <!-- simple-peer: WebRTC data channel abstraction -->
     <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
-    <!-- game.js: handles socket.io, WebRTC signalling, QR display, and the game loop -->
     <script src="js/game.js" defer></script>
 </body>
 
