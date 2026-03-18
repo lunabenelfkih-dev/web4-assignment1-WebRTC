@@ -10,7 +10,7 @@
 | **March 6** | **Refactor code** | Clean up the code so the game will go easier. | ✅ |
 | **March 8** | **Falling stuff logic** | Start implementing the falling stuff logic | ✅ |
 | **March 10** | **UX & Connection** | Create a connection overlay in `game.js` that auto-hides the qr code when a phone is connected. | ✅ |
-| **March 11** | **Optimize game js** | Optimize `game.js` |  |
+| **March 11** | **Optimize game js** | Optimize `game.js` | ✅ |
 | **March 12** | **Core Gameplay** | Implement collision detection to destroy meteorites and bullets upon impact. | ✅ |
 | **March 13** | **Scoring System** | Add global `score` state. Render current score to Canvas. | ✅ |
 | **March 14** | **Game over** | Create a "Game Over" state that stops the loop and restores the connection overlay to restart. | ✅ |
@@ -356,7 +356,9 @@ Re-organised the code a bit so it's more clear and easier to use. For example pu
 
 ## Day 06 — Falling stuff logic
 
-Worked on a basic implementation for the falling stuff logic. 
+Worked on a basic implementation for the falling stuff logic. I started from the AI generated code and adapted it to my needs. I played a bit with the speed and the amount of meteorites because i found that that was off.
+
+Then I also updated the loop from game.js to remove the bullets and meteorites from the arrays to prevent memory issues and lagging. There's no need for the array to keep all of them at all times. Bullets and meteorites should be removed when they go out of the screen.
 
 ### code from AI ( Gemini Pro )
 Here is the basic logic from AI that was later implemented into game.js. This code handles the initialization, movement, and drawing of the falling meteorites:
@@ -393,11 +395,7 @@ function draw() {
     });
 }
 ```
-## Day 07 — Optimize game.js
-
-Updated the loop from game.js to remove the bullets and meteorites from the arrays to prevent memory issues and lagging. There's no need for the array to keep all of them at all times. Bullets and meteorites will be removed when they go out of the screen.
-
-## Day 08 — Detect overlapping and delete meteorites and bullets
+## Day 07 — Detect overlapping and delete meteorites and bullets
 
 ### code from AI (Gemini Pro)
 I looked up how to check collision through JS and found that i could do so through `hypot()`. I then used AI to help me to implement this. AI provided the basic Math.hypot logic for collision detection. However, I found that using a simple radius wasn't enough for the rectangular bullet sprites I eventually added. I modified the threshold from 20 to 15 and adjusted the hitboxes to feel more 'fair' to the player.
@@ -415,16 +413,16 @@ I looked up how to check collision through JS and found that i could do so throu
         }
     }
 ```
-## Day 09 — Score logic
+## Day 08 — Score logic
 Add score logic and show the current score and high score on the screen.
 
-## Day 10 — Game over
+## Day 09 — Game over
 Implement logic so that when a meteorite's y value is lower than the ship's y value, it's game over. I also added a count down before the game starts and some logic to make sure the game only starts when the user is connected. Because I noticed that otherwise the game would sometimes be over even without it having started.
 
-## Day 11 — Make game more playable
+## Day 10 — Make game more playable
 I noticed that it was really hard to play because in the beginning they were immediately way too much meteorites so decided to look into that. I added a difficulty scale so the higher the score, the more difficult the game gets.
 
-## Day 12 — Landscape Mode Refactoring
+## Day 11 — Landscape Mode Refactoring
 While testing the game i noticed that it does not feel natural to hold the phone vertically so i wanted to implement something so the user has to turn their phone in landscape to play the game. This would give more the feeling of a real game remote. The earlier AI provided code (Day 04) suggested using gamma, i found out that beta provides the most natural feel for holding the phone while playing. Gemini also helped me a bit with that.
 
 ### what AI recommended (Gemini Pro)
@@ -460,20 +458,20 @@ Result: More responsive steering (smaller angle range = larger movement ratio).
 
 **In `controller.html`:**
 - Added CSS overlay for portrait orientation detection
-- Displays: **"📱 Rotate to Landscape"** message
+- Displays: **"Rotate to Landscape"** message
 - Monitors `orientationchange` and `resize` events
 - Dynamically shows/hides based on screen dimensions
 
-## Day 13 — Make it more visual
+## Day 12 — Make it more visual
 I added visuals for the desktop game as well as for the remote. I made them in Figma and then each time added them to the game in the JS code. I also made sure the typography matches the style of the game and is coherent over the whole application.
 
-## Day 14 — State logic
+## Day 13 — State logic
 Implement logic to restart the game from the desktop and the phone when the game is over. Also rethink the state logic so qr code only shows when player is disconnected, game over only shows when player is still connected, ...
 
-## Day 15 — Implement sound
+## Day 14 — Implement sound
 I added sound to the game. Now when the player shoots there's a lazer sound, when they hit a meteorite there's an explosion sound and in the background there's an 8bit version of the interstellar theme song.
 
-I originally tried to have the music start automatically when the player is connected, but the AI-generated code failed because of browser 'Autoplay Policies.' I realized that a network message does not count as a 'user gesture.' I had to manually refactor the SoundManager to include an unlockContext method that 'primes' the audio buffers only when the user physically clicks the Mute/Unmute button. This was a critical manual fix to ensure the game didn't start in silence.
+I originally tried to have the music start automatically when the player is connected, but the AI-generated code failed because of browser 'Autoplay Policies.' I realized that a network message does not count as a 'user gesture.' I had to manually refactor the SoundManager to include an unlockContext method that 'primes' the audio buffers only when the user physically clicks the Play/Pause button. This was a critical manual fix to ensure the game didn't start in silence.
 
 ### Code from AI (Claude Haiku 4.5 in VS Code)
 ```js
@@ -484,7 +482,7 @@ const shootSound = new Audio('/assets/sounds/lazer.mp3');
 const explosionSound = new Audio('/assets/sounds/explosionsound.mp3');
 ```
 
-## Day 16 — Haptic Feedback & Audio Split
+## Day 15 — Haptic Feedback & Audio Split
 Looked into adding haptic feedback to the game. I tried some code which did not work at all. I then found out that it's Apple intentionally blocking that. I looked for a solution and Gemini recommended me to instead work with a sharp sound that might give the illustration to the user of a haptic tap. Then I thought maybe it will be more interesting if I just move the laser sound to the phone. So then the laser sound comes from the phone while shooting and the explosion sound and background music comes from the desktop. This will ensure a better user experience as well.
 
 By splitting the audio across devices:
@@ -492,7 +490,7 @@ By splitting the audio across devices:
 - **Desktop**: Plays explosion sound on collision and background music (controlled via button)
 - **Result**: Better user experience with immediate audio feedback on the phone side
 
-## Day 17 — Finishing Touches
+## Day 16 — Finishing Touches
 Today i cleaned up the unnecessary code and play tested the game a few times. I noticed that my js structure did not make sense so restructured it a bit. I refactored the css for it to be more efficient and i added global variables. 
 
 During final testing, I identified a critical hole in the connection process. If a player clicked the START button on their phone before the Peer-to-Peer connection was fully established, the gyro_ready signal was sent into a void, preventing the game from starting on the desktop.
