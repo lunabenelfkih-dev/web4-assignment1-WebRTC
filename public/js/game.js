@@ -232,12 +232,12 @@ function startCountdown(duration = 3) {
     }, 1000);
 }
 
-function gameLoop() {
+function init() {
     if (gameStarted && !gameOver) {
         update();
     }
     draw();
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(init);
 }
 
 function update() {
@@ -421,6 +421,5 @@ function draw() {
     }
 }
 
-document.getElementById('restart-btn').addEventListener('click', restartGame);
 
-gameLoop();
+init();
