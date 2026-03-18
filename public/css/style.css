@@ -54,10 +54,9 @@
     --transition-fast: 0.3s ease;
     --transition-normal: 0.5s;
 
-    /* Sizing & Gradients */
+    /* Gradients */
     --gradient-orange: linear-gradient(135deg, var(--color-orange-light), var(--color-orange-primary));
     --gradient-orange-hover: linear-gradient(135deg, var(--color-orange-light-hover), var(--color-orange-hover));
-}
 }
 
 /* BASE STYLES */

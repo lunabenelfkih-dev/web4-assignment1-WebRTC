@@ -17,13 +17,13 @@
 | **March 15** | **Start gyro** | Add a "Start" button to handle gyro permissions and make it's style cleaner. | ✅ |
 | **March 16** | **Visual Polish** | Replace primitive circles images | ✅  |
 | **March 17** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. | ✅ |
-| **March 18** | **Optimization** | Optimise where needed. If time, implement extras. |  |
+| **March 18** | **Optimization** | Optimise where needed. If time, implement extras. (Implemented sound from controller instead of haptic feedback) | ✅ |
 | **March 19** | **Extra** | Implement more extra features if time. |  |
-| **March 22** | **FINAL DEADLINE** | Final code cleanup: remove all unecessary code, verify documentation, and prepare the final project submission. |  |
+| **March 22** | **FINAL DEADLINE** | Final code cleanup: remove all unecessary code, verify documentation, and prepare the final project submission. | ✅ |
 
 ## Extra
-- haptic feedback when firing or when catching a meteorite
-- sound when firing, when touching meteorite, when game over, and background music
+- haptic feedback when firing or when catching a meteorite 
+- sound when firing, when touching meteorite, when game over, and background music ✅
 - webcam 
 
 ## Day 01 — Concept
@@ -92,7 +92,7 @@ iOS 13+ requires an explicit user gesture to grant `DeviceOrientationEvent` perm
 
 iOS Safari only grants gyroscope permission over **HTTPS**. A self-signed certificate (`key.pem` / `cert.pem`) was generated with `openssl` and the server was switched from `http.createServer` to `https.createServer`. Both files are excluded from git via `.gitignore`.
 
-### Code from AI
+### Code from AI (Claude Haiku 4.5 in VS Code)
 
 **HTTPS server** (`index.js`) — switched from `http` to `https` with a self-signed cert:
 ```js
@@ -358,7 +358,7 @@ Re-organised the code a bit so it's more clear and easier to use. For example pu
 
 Worked on a basic implementation for the falling stuff logic. 
 
-### code from AI
+### code from AI ( Gemini Pro )
 Here is the basic logic from AI that was later implemented into game.js. This code handles the initialization, movement, and drawing of the falling meteorites:
 
 ```js
@@ -399,8 +399,8 @@ Updated the loop from game.js to remove the bullets and meteorites from the arra
 
 ## Day 08 — Detect overlapping and delete meteorites and bullets
 
-### code from AI
-I looked up how to check collision through JS and found that i could do so through `hypot()`. I then used AI to help me to implement this.
+### code from AI (Gemini Pro)
+I looked up how to check collision through JS and found that i could do so through `hypot()`. I then used AI to help me to implement this. AI provided the basic Math.hypot logic for collision detection. However, I found that using a simple radius wasn't enough for the rectangular bullet sprites I eventually added. I modified the threshold from 20 to 15 and adjusted the hitboxes to feel more 'fair' to the player.
 
 ```js
     // Collision detection: bullets vs meteorites
@@ -427,7 +427,7 @@ I noticed that it was really hard to play because in the beginning they were imm
 ## Day 12 — Landscape Mode Refactoring
 While testing the game i noticed that it does not feel natural to hold the phone vertically so i wanted to implement something so the user has to turn their phone in landscape to play the game. This would give more the feeling of a real game remote.
 
-### what AI recommended
+### what AI recommended (Gemini Pro)
 #### My prompt
 "I think it might be better to use the phone in landscape mode to play the game, is that hard to implement?"
 #### Gemini's response
@@ -473,16 +473,30 @@ Implement logic to restart the game from the desktop and the phone when the game
 ## Day 15 — Implement sound
 I added sound to the game. Now when the player shoots there's a lazer sound, when they hit a meteorite there's an explosion sound and in the background there's an 8bit version of the interstellar theme song.
 
-First I implemented this without a button but this created some issues in the browser. Basically there's a user interaction needed for the browser to allow sound. So then i decided to work with a play/pause button for the sounds. This is also more UX friendly as not everyone likes sound while playing.
+I originally tried to have the music start automatically when the player is connected, but the AI-generated code failed because of browser 'Autoplay Policies.' I realized that a network message does not count as a 'user gesture.' I had to manually refactor the SoundManager to include an unlockContext method that 'primes' the audio buffers only when the user physically clicks the Mute/Unmute button. This was a critical manual fix to ensure the game didn't start in silence.
 
-## Day 16 — Haptic Feedback
-Looked into adding haptic feedback to the game. I tried some code which did not work at all. I then found out that it's Apple intentionally blocking that. I looked for a solution and Gemini recommended me to instead work with a sharp sound that might give the illustion to the user of a haptic tap. Then i thought maybe it will be more interesting if i just move the lazer sound to the phone. So then the lazer sound comes from the phone while shooting and the explosion sound and background music comes from the desktop. This will ensure a better user experience as well.
+### Code from AI (Claude Haiku 4.5 in VS Code)
+```js
+const bgMusic = new Audio('/assets/sounds/interstellar-8bit.mp3');
+bgMusic.loop = true;
+
+const shootSound = new Audio('/assets/sounds/lazer.mp3');
+const explosionSound = new Audio('/assets/sounds/explosionsound.mp3');
+```
+
+## Day 16 — Haptic Feedback & Audio Split
+Looked into adding haptic feedback to the game. I tried some code which did not work at all. I then found out that it's Apple intentionally blocking that. I looked for a solution and Gemini recommended me to instead work with a sharp sound that might give the illustration to the user of a haptic tap. Then I thought maybe it will be more interesting if I just move the laser sound to the phone. So then the laser sound comes from the phone while shooting and the explosion sound and background music comes from the desktop. This will ensure a better user experience as well.
+
+By splitting the audio across devices:
+- **Phone**: Plays laser sound instantly when user taps
+- **Desktop**: Plays explosion sound on collision and background music (controlled via button)
+- **Result**: Better user experience with immediate audio feedback on the phone side
 
 ## Day 17 — Finishing Touches
-Today i cleaned up the unecessary code and play tested the game a fiew times.
+Today i cleaned up the unnecessary code and play tested the game a few times. I refactored the css for it to be more efficient and i added global variables.
 
-
-### clean up code - move css to css file? - NOT YET
+## Day 18 — Extra Video Feature
+I remembered that Koen said during consult that it's not hard to implement video so i decided i still wanted to do so. 
 
 
 
