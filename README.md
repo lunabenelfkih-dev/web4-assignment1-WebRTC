@@ -478,6 +478,8 @@ First I implemented this without a button but this created some issues in the br
 ## Day 16 — Haptic Feedback
 Looked into adding haptic feedback to the game. I tried some code which did not work at all. I then found out that it's Apple intentionally blocking that. I looked for a solution and Gemini recommended me to instead work with a sharp sound that might give the illustion to the user of a haptic tap. Then i thought maybe it will be more interesting if i just move the lazer sound to the phone. So then the lazer sound comes from the phone while shooting and the explosion sound and background music comes from the desktop. This will ensure a better user experience as well.
 
+## Day 17 — Finishing Touches
+Today i cleaned up the unecessary code and play tested the game a fiew times.
 
 
 ### clean up code - move css to css file? - NOT YET

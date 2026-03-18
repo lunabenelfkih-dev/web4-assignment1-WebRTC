@@ -98,7 +98,8 @@ function showGameOverScreen() {
 function startGyro() {
     window.addEventListener('deviceorientation', (e) => {
         if (peer && peer.connected) {
-            peer.send(JSON.stringify({ type: 'move', x: e.beta }));
+            const roundedBeta = Math.round(event.beta);
+            peer.send(JSON.stringify({ type: 'move', x: roundedBeta }));
         }
     });
 }

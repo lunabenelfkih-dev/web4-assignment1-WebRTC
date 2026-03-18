@@ -200,7 +200,7 @@ function handleRemoteInput(rawData) {
     const msg = JSON.parse(rawData);
 
     if (msg.type === 'move') {
-        if (msg.x === null || msg.x === undefined) return; // sensor returned null, ignore
+        if (msg.x === null || msg.x === undefined) return;
         const clampedBeta = Math.min(45, Math.max(-45, msg.x));
         const normalised = Math.min(1, Math.max(0, (clampedBeta + 45) / 90));
         ship.x = normalised * canvas.width;
