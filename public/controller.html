@@ -393,6 +393,11 @@
         let targetSocketId;
         let gyroActive = false;
 
+        // Laser sound for phone controller
+        const lazerSound = new Audio('/assets/sounds/lazer.mp3');
+        lazerSound.preload = 'auto';
+        lazerSound.volume = 0.2;
+
         const getUrlParam = name => {
             name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
             const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
@@ -568,6 +573,7 @@
             // Fire on tap anywhere on the screen
             window.addEventListener('touchstart', () => {
                 if (!peer || !peer.connected) return;
+                lazerSound.cloneNode(true).play().catch(() => { });
                 peer.send(JSON.stringify({ type: 'fire' }));
             }, { passive: true });
 

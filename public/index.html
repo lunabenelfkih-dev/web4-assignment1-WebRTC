@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebRTC Space Game</title>
+    <title>WebRTC Space Shooter</title>
+    <link rel="icon" type="image/png" href="/assets/favicon.png">
     <style>
         body {
             margin: 0;
@@ -66,10 +67,57 @@
             display: none !important;
             pointer-events: none;
         }
+
+        /* Music toggle button */
+        .music-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 60px;
+            height: 60px;
+            border: 2px solid white;
+            border-radius: 50%;
+            background: rgba(52, 52, 54, 0.1);
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            box-shadow: 0 0 10px rgba(52, 52, 54, 0.3);
+        }
+
+        .music-btn:hover {
+            background: rgba(52, 52, 54, 0.2);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+        }
+
+        .music-btn.playing {
+            background: rgba(52, 52, 54, 0.3);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+        }
+
+        .music-btn.paused::before {
+            content: "▶";
+            font-size: 1.5rem;
+        }
+
+        .music-btn.playing::before {
+            content: "⏸";
+            font-size: 1.5rem;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Music toggle button -->
+    <button id="music-toggle-btn" class="music-btn paused"></button>
+
     <!-- ── Overlay: visible until controller data channel opens ── -->
     <div id="connection-overlay">
         <h2>Scan to connect your controller</h2>
