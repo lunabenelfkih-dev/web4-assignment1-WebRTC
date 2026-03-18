@@ -20,13 +20,11 @@ io.on('connection', socket => {
     console.log(`Connected: ${socket.id}`);
     clients[socket.id] = { id: socket.id };
 
-    // WebRTC signalling relay — forward any signal to the target socket
     socket.on('signal', (targetSocketId, data) => {
         if (!clients[targetSocketId]) {
             console.log(`Signal target not found: ${targetSocketId}`);
             return;
         }
-        // Forward the signal, including the sender's id so the receiver knows who to reply to
         socket.to(targetSocketId).emit('signal', socket.id, data);
     });
 

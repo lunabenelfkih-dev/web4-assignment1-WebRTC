@@ -1,0 +1,293 @@
+:root {
+    /* Colors - Primary */
+    --color-black: black;
+    --color-white: white;
+    --color-dark-bg: #050C12;
+
+    /* Colors - Accent */
+    --color-orange-primary: #ea580c;
+    --color-orange-hover: #ff6618;
+    --color-orange-light: #ff7c00;
+    --color-orange-light-hover: #ff8c20;
+    --color-orange-border: rgba(234, 88, 12, 0.8);
+    --color-orange-glow: rgba(255, 124, 0, 0.5);
+    --color-orange-glow-bright: rgba(255, 124, 0, 0.8);
+    --color-orange-shadow: rgba(255, 102, 24, 0.6);
+
+    /* Colors - UI */
+    --color-button-bg: rgba(52, 52, 54, 0.1);
+    --color-button-bg-hover: rgba(52, 52, 54, 0.2);
+    --color-button-bg-active: rgba(52, 52, 54, 0.3);
+    --color-button-shadow: rgba(52, 52, 54, 0.3);
+
+    /* Colors - Text */
+    --color-text-subtle: #aaa;
+
+    /* Colors - Overlays */
+    --color-overlay-connection: hsl(208, 57%, 5%, 90%);
+    --color-overlay-gameover: rgba(0, 0, 0, 0.8);
+    --color-overlay-game-dark: rgba(5, 12, 18, 0.95);
+    --color-glow-white: rgba(255, 255, 255, 0.6);
+    --color-glow-white-bright: rgba(255, 255, 255, 0.8);
+
+    /* Sizes */
+    --size-music-button: 60px;
+    --size-border-width: 2px;
+
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 0.75rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-button-position: 20px;
+
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-circle: 50%;
+
+    /* Font Sizes */
+    --font-size-xs: 0.8rem;
+    --font-size-sm: 0.95rem;
+    --font-size-md: 1.2rem;
+    --font-size-lg: 1.4rem;
+    --font-size-xl: 1.5rem;
+    --font-size-2xl: 3rem;
+
+    /* Transitions */
+    --transition-fast: 0.3s ease;
+    --transition-normal: 0.5s;
+
+    /* Gradients */
+    --gradient-orange: linear-gradient(135deg, var(--color-orange-light), var(--color-orange-primary));
+    --gradient-orange-hover: linear-gradient(135deg, var(--color-orange-light-hover), var(--color-orange-hover));
+}
+
+/* BASE STYLES */
+body {
+    margin: 0;
+    overflow: hidden;
+    background: var(--color-black);
+}
+
+#gameCanvas {
+    display: block;
+}
+
+/* OVERLAY STYLES */
+#connection-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--color-overlay-connection);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    color: var(--color-white);
+    text-align: center;
+    padding: var(--spacing-lg);
+    box-sizing: border-box;
+    transition: opacity var(--transition-normal);
+    font-family: Helvetica, sans-serif;
+}
+
+#connection-overlay h2 {
+    margin: 0 0 var(--spacing-md);
+    font-size: var(--font-size-lg);
+}
+
+#qr {
+    background: var(--color-white);
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    margin: var(--spacing-sm) 0;
+}
+
+#overlay-subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-subtle);
+    margin: var(--spacing-xs) 0 0;
+}
+
+#connection-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--color-overlay-gameover);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 101;
+    color: var(--color-white);
+    text-align: center;
+    padding: var(--spacing-lg);
+    box-sizing: border-box;
+    font-family: Helvetica, sans-serif;
+    transition: opacity var(--transition-normal);
+}
+
+#game-over-overlay h2 {
+    margin: 0 0 var(--spacing-md);
+    font-size: var(--font-size-2xl);
+}
+
+#game-over-overlay p {
+    font-size: var(--font-size-xl);
+    margin: 0 0 var(--spacing-xl);
+}
+
+/* UI ELEMENTS */
+
+#restart-btn {
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: var(--font-size-md);
+    background: var(--color-orange-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    margin-top: var(--spacing-md);
+    transition: all var(--transition-fast);
+}
+
+#restart-btn:hover {
+    background: var(--color-orange-hover);
+    box-shadow: 0 0 20px var(--color-orange-shadow);
+    transform: scale(1.05);
+}
+
+#restart-btn:active {
+    transform: scale(0.98);
+}
+
+.music-btn {
+    position: fixed;
+    top: var(--spacing-button-position);
+    right: var(--spacing-button-position);
+    z-index: 1000;
+    width: var(--size-music-button);
+    height: var(--size-music-button);
+    border: var(--size-border-width) solid var(--color-white);
+    border-radius: var(--radius-circle);
+    background: var(--color-button-bg);
+    color: var(--color-white);
+    font-size: var(--font-size-xs);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: 0 0 10px var(--color-button-shadow);
+}
+
+.music-btn:hover {
+    background: var(--color-button-bg-hover);
+    box-shadow: 0 0 20px var(--color-glow-white);
+}
+
+.music-btn.playing {
+    background: var(--color-button-bg-active);
+    box-shadow: 0 0 30px var(--color-glow-white-bright);
+}
+
+.music-btn.paused::before {
+    content: "▶";
+    font-size: 1.5rem;
+}
+
+.music-btn.playing::before {
+    content: "⏸";
+    font-size: 1.5rem;
+}
+
+/* OTHER */
+.hidden {
+    display: none !important;
+    pointer-events: none;
+}
+
+/* REMOTE.JS STYLES - Dynamically created elements */
+.gyro-permission-btn {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: var(--font-size-md);
+    background: var(--gradient-orange);
+    color: var(--color-white);
+    border: 3px solid var(--color-orange-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: 0 0 30px var(--color-orange-glow);
+}
+
+.gyro-permission-btn:hover {
+    background: var(--gradient-orange-hover);
+    box-shadow: 0 0 50px var(--color-orange-glow-bright);
+    transform: translate(-50%, -50%) scale(1.05);
+}
+
+.game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--color-overlay-game-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    color: var(--color-white);
+    text-align: center;
+}
+
+.game-over-overlay h1 {
+    font-size: var(--font-size-2xl);
+    margin: 0 0 var(--spacing-xl);
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.game-over-restart-btn {
+    padding: 1.5rem 3rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: var(--gradient-orange);
+    color: var(--color-white);
+    border: 3px solid var(--color-orange-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: 0 0 30px var(--color-orange-glow);
+}
+
+.game-over-restart-btn:hover {
+    background: var(--gradient-orange-hover);
+    box-shadow: 0 0 50px var(--color-orange-glow-bright);
+    transform: scale(1.05);
+}
+
+.game-over-restart-btn:active {
+    transform: scale(0.98);
+}
