@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebRTC Controller</title>
     <style>
-        /* Global reset to remove default margins and ensure full viewport coverage */
         html,
         body {
             margin: 0;
@@ -17,7 +16,6 @@
             font-family: Helvetica, sans-serif;
         }
 
-        /* Portrait mode warning - shown when screen is in portrait orientation */
         #portrait-warning {
             display: none;
             position: fixed;
@@ -52,7 +50,6 @@
             color: #ccc;
         }
 
-        /* Game controller UI overlay */
         #controller-ui {
             display: none;
             position: fixed;
@@ -95,7 +92,6 @@
             justify-content: center;
         }
 
-        /* Control center wrapper for tilt and fire icons */
         .control-center {
             display: flex;
             align-items: center;
@@ -103,7 +99,6 @@
             gap: 80px;
         }
 
-        /* Tilt/Gyroscope indicator */
         .tilt-indicator {
             display: flex;
             flex-direction: column;
@@ -141,7 +136,6 @@
             box-shadow: 0 0 30px rgba(255, 124, 0, 0.8);
         }
 
-        /* Fire icons on sides */
         .fire-icon {
             width: 150px;
             height: 150px;
@@ -157,7 +151,6 @@
             order: 1;
         }
 
-        /* Score display */
         .score-display {
             position: absolute;
             top: 30px;
@@ -169,7 +162,6 @@
             color: rgba(147, 197, 253, 0.9);
         }
 
-        /* Start button overlay - shown before game begins */
         #start-overlay {
             display: none;
             position: fixed;
@@ -249,7 +241,6 @@
             min-height: 20px;
         }
 
-        /* Game Over overlay on phone */
         #game-over-overlay-phone {
             display: none;
             position: fixed;
@@ -317,7 +308,6 @@
 </head>
 
 <body>
-    <!-- Portrait mode warning overlay -->
     <div id="portrait-warning">
         <h1>Rotate to Landscape</h1>
         <p>Please rotate your phone to landscape mode to play</p>
@@ -326,7 +316,7 @@
     <!-- Start overlay with button -->
     <div id="start-overlay" class="active">
         <h1>SPACE SHOOTER</h1>
-        <p>Ready to play?</p>
+        <p>Ready to play? Activate your sound for a better experience</p>
         <button id="start-button">START</button>
         <div id="status-message"></div>
     </div>
