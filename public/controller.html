@@ -125,7 +125,7 @@
         .tilt-bar {
             height: 100%;
             background: linear-gradient(90deg, transparent, #ea580c 50%, transparent);
-            width: 0%;
+            width: var(--tilt-width, 0%);
             transition: width 0.1s ease-out;
             box-shadow: 0 0 20px rgba(234, 88, 12, 0.6);
         }
@@ -304,6 +304,16 @@
         #play-again-btn:active {
             transform: scale(0.98);
         }
+
+        #instructions {
+            display: none;
+        }
+
+        #gyro-debug {
+            font-family: monospace;
+            font-size: 1rem;
+            color: #666;
+        }
     </style>
 </head>
 
@@ -313,7 +323,6 @@
         <p>Please rotate your phone to landscape mode to play</p>
     </div>
 
-    <!-- Start overlay with button -->
     <div id="start-overlay" class="active">
         <h1>SPACE SHOOTER</h1>
         <p>Ready to play? Activate your sound for a better experience</p>
@@ -321,15 +330,12 @@
         <div id="status-message"></div>
     </div>
 
-    <!-- Game controller UI overlay -->
     <div id="controller-ui">
         <div class="score-display" id="score-display">SCORE: 0</div>
         <div class="controller-container">
             <div class="control-center">
-                <!-- Left fire icon -->
                 <img src="/assets/fire.svg" alt="Fire" class="fire-icon left">
 
-                <!-- Tilt indicator overlay -->
                 <div class="tilt-indicator">
                     <div class="tilt-label">TILT</div>
                     <div class="tilt-bar-container">
@@ -337,13 +343,11 @@
                     </div>
                 </div>
 
-                <!-- Right fire icon -->
                 <img src="/assets/fire.svg" alt="Fire" class="fire-icon right">
             </div>
         </div>
     </div>
 
-    <!-- Game Over overlay on phone -->
     <div id="game-over-overlay-phone">
         <h2>GAME OVER</h2>
         <p>Final Score: <span id="final-score-phone">0</span></p>
@@ -353,14 +357,13 @@
     <p>Status: <span id="status">Connecting to server…</span></p>
     <p>WebRTC: <span id="rtcStatus">Idle</span></p>
 
-    <p id="instructions" style="display:none">
+    <p id="instructions">
         Tilt your phone left/right to move. Tap to fire.
     </p>
 
-    <p id="gyro-debug" style="font-family:monospace; font-size:1rem; color:#666;">Beta: —</p>
+    <p id="gyro-debug">Beta: —</p>
 
     <script src="/socket.io/socket.io.js"></script>
-    <!-- simple-peer: WebRTC data channel abstraction -->
     <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
     <script>
         const $status = document.getElementById('status');
@@ -400,11 +403,11 @@
             if (beta === null || beta === undefined) return; // sensor not calibrated yet
             if (!peer || !peer.connected) return;
 
-            // Update tilt bar visualization
+            // Update tilt bar
             if ($tiltBar) {
                 const clampedBeta = Math.min(45, Math.max(-45, beta));
                 const tiltPercent = ((clampedBeta + 45) / 90) * 100;
-                $tiltBar.style.width = tiltPercent + '%';
+                $tiltBar.style.setProperty('--tilt-width', tiltPercent + '%');
             }
 
             const now = Date.now();
@@ -414,12 +417,11 @@
             peer.send(JSON.stringify({ type: 'move', x: beta }));
         };
 
-        // Simple Peer setup (Initiator)
+        // Simple Peer
         const startWebRTC = () => {
             peer = new SimplePeer({ initiator: true, trickle: false });
             $rtcStatus.textContent = 'Connecting — gathering ICE…';
 
-            // trickle: false → fires exactly once with the complete offer + all ICE candidates
             peer.on('signal', data => {
                 socket.emit('signal', targetSocketId, data);
                 $rtcStatus.textContent = 'Offer sent — waiting for answer…';
@@ -439,13 +441,12 @@
                             scoreDisplay.textContent = `SCORE: ${data.value}`;
                         }
                     } else if (data.type === 'game_over') {
-                        // Game is over; show the overlay with play again button
+                        // Game over
                         if ($gameOverOverlayPhone) {
                             $gameOverOverlayPhone.classList.add('active');
                         }
                     }
                 } catch (e) {
-                    // Ignore parse errors
                 }
             });
 
@@ -460,20 +461,17 @@
             });
         };
 
-        // Gyroscope input
+        // Gyroscope
         const startGyro = () => {
             window.addEventListener('deviceorientation', e => {
-                // Use beta for landscape mode tilt (left/right rotation)
                 sendGyro(e.beta);
             });
             $startButton.textContent = 'Gyroscope active ✅';
             $startButton.disabled = true;
             gyroActive = true;
-            // Show controller UI if in landscape
             checkOrientation();
         };
 
-        // Check orientation and show controller UI if in landscape and gyro is active
         const checkOrientation = () => {
             if (window.innerHeight > window.innerWidth) {
                 // Portrait mode
@@ -492,25 +490,22 @@
             }
         };
 
-        // Monitor orientation changes
         window.addEventListener('orientationchange', checkOrientation);
         window.addEventListener('resize', checkOrientation);
 
-        // Request gyroscope permission and start flow
         const requestGyroPermission = () => {
             $startButton.disabled = true;
             $statusMessage.textContent = 'Requesting permissions...';
 
             if (typeof DeviceOrientationEvent !== 'undefined' &&
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
-                // iOS 13+ requires explicit permission
+
                 DeviceOrientationEvent.requestPermission()
                     .then(state => {
                         if (state === 'granted') {
                             $statusMessage.textContent = '';
                             startGyro();
                             checkOrientation();
-                            // Send gyro_ready message to PC to start countdown
                             if (peer && peer.connected) {
                                 peer.send(JSON.stringify({ type: 'gyro_ready' }));
                             }
@@ -527,11 +522,9 @@
                         $statusMessage.textContent = 'Error requesting permission';
                     });
             } else {
-                // Android and desktop — no permission needed
                 $statusMessage.textContent = '';
                 startGyro();
                 checkOrientation();
-                // Send gyro_ready message to PC to start countdown
                 if (peer && peer.connected) {
                     peer.send(JSON.stringify({ type: 'gyro_ready' }));
                 }
@@ -540,13 +533,10 @@
 
         $startButton.addEventListener('click', requestGyroPermission);
 
-        // Handle play again button click
         $playAgainBtn.addEventListener('click', () => {
-            // Hide game over overlay
             if ($gameOverOverlayPhone) {
                 $gameOverOverlayPhone.classList.remove('active');
             }
-            // Send restart request to PC
             if (peer && peer.connected) {
                 peer.send(JSON.stringify({ type: 'restart_request' }));
             }
@@ -560,7 +550,6 @@
                 return;
             }
 
-            // Fire on tap anywhere on the screen
             window.addEventListener('touchstart', () => {
                 if (!peer || !peer.connected) return;
                 lazerSound.cloneNode(true).play().catch(() => { });
@@ -578,7 +567,6 @@
                 $status.textContent = 'Disconnected';
             });
 
-            // Receive the answer from the game and feed it into Simple Peer to complete the handshake
             socket.on('signal', (remoteSocketId, data) => {
                 peer.signal(data);
                 $rtcStatus.textContent = 'Answer received — finalising…';
