@@ -16,10 +16,10 @@
 | **March 14** | **Game over** | Create a "Game Over" state that stops the loop and restores the connection overlay to restart. | ✅ |
 | **March 15** | **Start gyro** | Add a "Start" button to handle gyro permissions and make it's style cleaner. | ✅ |
 | **March 16** | **Visual Polish** | Replace primitive circles images | ✅  |
-| **March 17** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. |  |
+| **March 17** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. | ✅ |
 | **March 18** | **Optimization** | Optimise where needed. If time, implement extras. |  |
 | **March 19** | **Extra** | Implement more extra features if time. |  |
-| **March 22** | **FINAL DEADLINE** | Final code cleanup: remove all `console.log` statements, verify documentation, and prepare the final project submission. |  |
+| **March 22** | **FINAL DEADLINE** | Final code cleanup: remove all unecessary code, verify documentation, and prepare the final project submission. |  |
 
 ## Extra
 - haptic feedback when firing or when catching a meteorite
@@ -467,16 +467,20 @@ Result: More responsive steering (smaller angle range = larger movement ratio).
 ## Day 13 — Make it more visual
 I added visuals for the desktop game as well as for the remote. I made them in Figma and then each time added them to the game in the JS code. I also made sure the typography matches the style of the game and is coherent over the whole application.
 
-## Day 14 — Restart game
-Implement logic to restart the game from the desktop and the phone when the game is over.
+## Day 14 — State logic
+Implement logic to restart the game from the desktop and the phone when the game is over. Also rethink the state logic so qr code only shows when player is disconnected, game over only shows when player is still connected, ...
+
+## Day 15 — Implement sound
+I added sound to the game. Now when the player shoots there's a lazer sound, when they hit a meteorite there's an explosion sound and in the background there's an 8bit version of the interstellar theme song.
+
+First I implemented this without a button but this created some issues in the browser. Basically there's a user interaction needed for the browser to allow sound. So then i decided to work with a play/pause button for the sounds. This is also more UX friendly as not everyone likes sound while playing.
+
+## Day 16 — Haptic Feedback
+Looked into adding haptic feedback to the game. I tried some code which did not work at all. I then found out that it's Apple intentionally blocking that. I looked for a solution and Gemini recommended me to instead work with a sharp sound that might give the illustion to the user of a haptic tap. Then i thought maybe it will be more interesting if i just move the lazer sound to the phone. So then the lazer sound comes from the phone while shooting and the explosion sound and background music comes from the desktop. This will ensure a better user experience as well.
 
 
 
-### add replay game option when game is over and make sure the old game starts again and the meteorite positions start from 0? - NOT YET
-
-### make sure the game over screen stays 5sec before showing the qr code again - NOT YET
-
-### ask on console to play again - NOT YET
+### clean up code - move css to css file? - NOT YET
 
 
 

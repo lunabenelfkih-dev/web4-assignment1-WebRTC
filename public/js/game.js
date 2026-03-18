@@ -16,6 +16,110 @@ meteoriteImg.src = '/assets/meteorite.svg';
 // Load rocket sprite
 const rocketImg = new Image();
 rocketImg.src = '/assets/rocket.svg';
+
+// ─────────────────────────────────────────────────────────────
+// AUDIO SYSTEM
+// ─────────────────────────────────────────────────────────────
+
+let audioUnlocked = false; // Track if audio context is unlocked
+let musicEnabled = false;  // Source of truth for music playback
+
+// Helper: Create a pool of N identical audio elements
+function createAudioPool(src, count, volume) {
+    return Array(count).fill(null).map(() => {
+        const audio = new Audio(src);
+        audio.volume = volume;
+        audio.preload = 'auto';
+        return audio;
+    });
+}
+
+// Sound Manager: Handles all audio playback with circular indexing
+const SoundManager = {
+    bgMusic: (() => {
+        const audio = new Audio('/assets/sounds/interstellar-8bit.mp3');
+        audio.loop = true;
+        audio.volume = 0.4;
+        audio.preload = 'auto';
+        return audio;
+    })(),
+
+    explosions: createAudioPool('/assets/sounds/explosionsound.mp3', 3, 0.5),
+
+    explosionIdx: 0,
+
+    // Play a sound with single retry on failure
+    playWithRetry(audio) {
+        if (!audio) return;
+        try {
+            audio.currentTime = 0;
+            const promise = audio.play();
+            if (promise !== undefined) {
+                promise.catch(() => {
+                    setTimeout(() => {
+                        try {
+                            audio.currentTime = 0;
+                            audio.play().catch(() => { });
+                        } catch (e) { }
+                    }, 50);
+                });
+            }
+        } catch (e) { }
+    },
+
+    playExplosion() {
+        this.playWithRetry(this.explosions[this.explosionIdx]);
+        this.explosionIdx = (this.explosionIdx + 1) % this.explosions.length;
+    },
+
+    unlockContext() {
+        if (audioUnlocked) return;
+        audioUnlocked = true;
+
+        try {
+            // Prime all sound pools silently (skip bgMusic to avoid race condition)
+            [this.explosions].flat().forEach(audio => {
+                audio.currentTime = 0;
+                const p = audio.play();
+                if (p !== undefined) {
+                    p.then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => { });
+                } else {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }
+            });
+        } catch (e) { }
+    },
+
+    toggleMusic() {
+        musicEnabled = !musicEnabled;
+        if (musicEnabled) {
+            this.bgMusic.currentTime = 0;
+            return this.bgMusic.play()
+                .then(() => true)
+                .catch(() => { musicEnabled = false; return false; });
+        } else {
+            this.bgMusic.pause();
+            return Promise.resolve(true);
+        }
+    }
+};
+
+// Music Button Handler
+const musicBtn = document.getElementById('music-toggle-btn');
+if (musicBtn) {
+    musicBtn.addEventListener('click', async () => {
+        SoundManager.unlockContext();
+        const success = await SoundManager.toggleMusic();
+
+        if (success) {
+            const isPlaying = musicEnabled;
+            musicBtn.classList.toggle('paused', !isPlaying);
+            musicBtn.classList.toggle('playing', isPlaying);
+        }
+    });
+}
+
 const ship = { x: canvas.width / 2, y: canvas.height - 80, size: 40 };
 const bullets = [];
 const meteorites = [];
@@ -118,7 +222,7 @@ function handleRemoteInput(rawData) {
     } else if (msg.type === 'fire') {
         bullets.push({ x: ship.x - 10, y: ship.y - 100 });
     } else if (msg.type === 'gyro_ready') {
-        // Phone has confirmed gyroscope access; start countdown
+        // Phone has confirmed gyroscope access; start countdown (music controlled separately by button)
         startCountdown(3);
     } else if (msg.type === 'restart_request') {
         // Phone requested restart; call restartGame
@@ -207,6 +311,8 @@ function update() {
                 bullets.splice(i, 1);
                 score += 10; // increment score on hit
                 sendScoreToController(); // send updated score to controller
+                // Play explosion sound
+                SoundManager.playExplosion();
                 if (score > highScore) {
                     highScore = score;
                     localStorage.setItem('highScore', highScore);
@@ -262,6 +368,9 @@ function restartGame() {
     bullets.length = 0;
     meteorites.length = 0;
     ship.x = canvas.width / 2;
+
+    // Music state is controlled solely by musicEnabled flag and button
+    // Do not modify bgMusic playback here
 
     // Ensure connection overlay stays hidden if peer is still connected
     if (peer && peer.connected) {
