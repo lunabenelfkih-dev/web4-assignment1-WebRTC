@@ -118,6 +118,16 @@ const checkOrientation = () => {
 window.addEventListener('orientationchange', checkOrientation);
 window.addEventListener('resize', checkOrientation);
 
+const finalizeStart = () => {
+    if (peer && peer.connected) {
+        peer.send(JSON.stringify({ type: 'gyro_ready' }));
+    } else if (peer) {
+        peer.once('connect', () => {
+            peer.send(JSON.stringify({ type: 'gyro_ready' }));
+        });
+    }
+};
+
 const requestGyroPermission = () => {
     $startButton.disabled = true;
     $statusMessage.textContent = 'Requesting permissions...';
@@ -131,9 +141,7 @@ const requestGyroPermission = () => {
                     $statusMessage.textContent = '';
                     startGyro();
                     checkOrientation();
-                    if (peer && peer.connected) {
-                        peer.send(JSON.stringify({ type: 'gyro_ready' }));
-                    }
+                    finalizeStart();
                 } else {
                     $startButton.textContent = 'Permission denied - try again';
                     $startButton.disabled = false;
@@ -150,9 +158,7 @@ const requestGyroPermission = () => {
         $statusMessage.textContent = '';
         startGyro();
         checkOrientation();
-        if (peer && peer.connected) {
-            peer.send(JSON.stringify({ type: 'gyro_ready' }));
-        }
+        finalizeStart();
     }
 };
 
