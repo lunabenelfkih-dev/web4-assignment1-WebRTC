@@ -42,6 +42,10 @@
     --spacing-xl: 2rem;
     --spacing-button-position: 20px;
 
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-circle: 50%;
+
     /* Font Sizes */
     --font-size-xs: 0.8rem;
     --font-size-sm: 0.95rem;

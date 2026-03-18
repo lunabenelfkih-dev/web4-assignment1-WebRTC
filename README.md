@@ -493,11 +493,4 @@ By splitting the audio across devices:
 - **Result**: Better user experience with immediate audio feedback on the phone side
 
 ## Day 17 — Finishing Touches
-Today i cleaned up the unnecessary code and play tested the game a few times. I refactored the css for it to be more efficient and i added global variables.
-
-## Day 18 — Extra Video Feature
-I remembered that Koen said during consult that it's not hard to implement video so i decided i still wanted to do so. 
-
-
-
-
+Today i cleaned up the unnecessary code and play tested the game a few times. I refactored the css for it to be more efficient and i added global variables. I also checked the brief again and checked if i had everything that i needed.

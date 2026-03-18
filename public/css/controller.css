@@ -1,0 +1,308 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Helvetica, sans-serif;
+}
+
+#portrait-warning {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #050C12;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    color: white;
+    text-align: center;
+    padding: 2rem;
+    box-sizing: border-box;
+    font-family: Helvetica, sans-serif;
+}
+
+#portrait-warning.active {
+    display: flex;
+}
+
+#portrait-warning h1 {
+    font-size: 2.5rem;
+    margin: 0 0 1rem;
+}
+
+#portrait-warning p {
+    font-size: 1.3rem;
+    margin: 0;
+    color: #ccc;
+}
+
+#controller-ui {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background: #050C12;
+    background-image:
+        url('/assets/controller-stars.png'),
+        url('/assets/controller-mist.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+#controller-ui::before {
+    display: none;
+}
+
+#controller-ui.active {
+    display: flex;
+}
+
+.controller-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 80px;
+}
+
+.tilt-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.tilt-label {
+    font-size: 12px;
+    letter-spacing: 1px;
+    opacity: 0.7;
+    text-transform: uppercase;
+}
+
+.tilt-bar-container {
+    width: 300px;
+    height: 40px;
+    border: 2px solid rgba(147, 197, 253, 0.4);
+    display: flex;
+    overflow: hidden;
+    background: rgba(5, 12, 18, 0.5);
+}
+
+.tilt-bar {
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #ea580c 50%, transparent);
+    width: var(--tilt-width, 0%);
+    transition: width 0.1s ease-out;
+    box-shadow: 0 0 20px rgba(234, 88, 12, 0.6);
+}
+
+.tilt-bar.active {
+    width: 60%;
+    background: linear-gradient(90deg, transparent, #ff7c00 50%, transparent);
+    box-shadow: 0 0 30px rgba(255, 124, 0, 0.8);
+}
+
+.fire-icon {
+    width: 150px;
+    height: 150px;
+    opacity: 0.9;
+    flex-shrink: 0;
+}
+
+.fire-icon.left {
+    order: -1;
+}
+
+.fire-icon.right {
+    order: 1;
+}
+
+.score-display {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 28px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: rgba(147, 197, 253, 0.9);
+}
+
+#start-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #050C12;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    color: white;
+    text-align: center;
+    padding: 2rem;
+    box-sizing: border-box;
+    font-family: Helvetica, sans-serif;
+}
+
+#start-overlay.active {
+    display: flex;
+}
+
+#start-overlay h1 {
+    font-size: 3rem;
+    margin: 0 0 2rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+#start-overlay p {
+    font-size: 1.2rem;
+    margin: 0 0 3rem;
+    color: rgba(147, 197, 253, 0.9);
+    letter-spacing: 1px;
+}
+
+#start-button {
+    padding: 1.5rem 4rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #ff7c00, #ea580c);
+    color: white;
+    border: 3px solid rgba(234, 88, 12, 0.8);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 30px rgba(255, 124, 0, 0.5);
+    font-family: Helvetica, sans-serif;
+}
+
+#start-button:hover {
+    background: linear-gradient(135deg, #ff8c20, #ff6618);
+    box-shadow: 0 0 50px rgba(255, 124, 0, 0.8);
+    transform: scale(1.05);
+}
+
+#start-button:active {
+    transform: scale(0.98);
+}
+
+#start-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: scale(1);
+}
+
+#status-message {
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: rgba(147, 197, 253, 0.7);
+    letter-spacing: 1px;
+    min-height: 20px;
+}
+
+#game-over-overlay-phone {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(5, 12, 18, 0.95);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    color: white;
+    text-align: center;
+    padding: 2rem;
+    box-sizing: border-box;
+    font-family: Helvetica, sans-serif;
+}
+
+#game-over-overlay-phone.active {
+    display: flex;
+}
+
+#game-over-overlay-phone h2 {
+    font-size: 3rem;
+    margin: 0 0 1.5rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+#game-over-overlay-phone p {
+    font-size: 1.8rem;
+    margin: 0 0 2.5rem;
+    color: rgba(147, 197, 253, 0.9);
+    letter-spacing: 1px;
+}
+
+#play-again-btn {
+    padding: 1.5rem 3rem;
+    font-size: 1.3rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #ff7c00, #ea580c);
+    color: white;
+    border: 3px solid rgba(234, 88, 12, 0.8);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 30px rgba(255, 124, 0, 0.5);
+    font-family: Helvetica, sans-serif;
+}
+
+#play-again-btn:hover {
+    background: linear-gradient(135deg, #ff8c20, #ff6618);
+    box-shadow: 0 0 50px rgba(255, 124, 0, 0.8);
+    transform: scale(1.05);
+}
+
+#play-again-btn:active {
+    transform: scale(0.98);
+}
+
+#instructions {
+    display: none;
+}
+
+#gyro-debug {
+    font-family: monospace;
+    font-size: 1rem;
+    color: #666;
+}
