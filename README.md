@@ -18,13 +18,13 @@
 | **March 16** | **Visual Polish** | Replace primitive circles images | ✅  |
 | **March 17** | **MILESTONE** | **End-to-End Testing:** Conduct full gameplay sessions to ensure the WebRTC DataChannel remains stable and the game loop is bug-free. | ✅ |
 | **March 18** | **Optimization** | Optimise where needed. If time, implement extras. (Implemented sound from controller instead of haptic feedback) | ✅ |
-| **March 19** | **Extra** | Implement more extra features if time. |  |
+| **March 19** | **Extra** | Implement more extra features if time. | ❌ |
 | **March 22** | **FINAL DEADLINE** | Final code cleanup: remove all unecessary code, verify documentation, and prepare the final project submission. | ✅ |
 
 ## Extra
-- haptic feedback when firing or when catching a meteorite 
+- haptic feedback when firing or when catching a meteorite ❌
 - sound when firing, when touching meteorite, when game over, and background music ✅
-- webcam 
+- webcam ❌
 
 ## Day 01 — Concept
 ### WebRTC Space Interceptor
@@ -425,7 +425,7 @@ Implement logic so that when a meteorite's y value is lower than the ship's y va
 I noticed that it was really hard to play because in the beginning they were immediately way too much meteorites so decided to look into that. I added a difficulty scale so the higher the score, the more difficult the game gets.
 
 ## Day 12 — Landscape Mode Refactoring
-While testing the game i noticed that it does not feel natural to hold the phone vertically so i wanted to implement something so the user has to turn their phone in landscape to play the game. This would give more the feeling of a real game remote.
+While testing the game i noticed that it does not feel natural to hold the phone vertically so i wanted to implement something so the user has to turn their phone in landscape to play the game. This would give more the feeling of a real game remote. The earlier AI provided code (Day 04) suggested using gamma, i found out that beta provides the most natural feel for holding the phone while playing. Gemini also helped me a bit with that.
 
 ### what AI recommended (Gemini Pro)
 #### My prompt
@@ -493,4 +493,44 @@ By splitting the audio across devices:
 - **Result**: Better user experience with immediate audio feedback on the phone side
 
 ## Day 17 — Finishing Touches
-Today i cleaned up the unnecessary code and play tested the game a few times. I noticed that my js structure did not make sense so restructured it a bit. I refactored the css for it to be more efficient and i added global variables. I also checked the brief again and checked if i had everything that i needed. Then i did some final testing before i uploaded.
+Today i cleaned up the unnecessary code and play tested the game a few times. I noticed that my js structure did not make sense so restructured it a bit. I refactored the css for it to be more efficient and i added global variables. 
+
+During final testing, I identified a critical hole in the connection process. If a player clicked the START button on their phone before the Peer-to-Peer connection was fully established, the gyro_ready signal was sent into a void, preventing the game from starting on the desktop.
+
+### Code from AI ( Gemini Pro )
+
+```js
+let gyroActive = false;
+
+function startWebRTC() {
+    peer = new SimplePeer({ initiator: true, trickle: false });
+    
+    peer.on('connect', () => {
+        $rtcStatus.textContent = 'WebRTC: Online';
+        
+        if (gyroActive) {
+            peer.send(JSON.stringify({ type: 'gyro_ready' }));
+        }
+    });
+}
+
+const requestGyroPermission = () => {
+    const finalize = () => {
+        gyroActive = true;
+        
+        if (peer && peer.connected) {
+            peer.send(JSON.stringify({ type: 'gyro_ready' }));
+        }
+    };
+
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(state => {
+            if (state === 'granted') finalize();
+        });
+    } else {
+        finalize();
+    }
+};
+```
+
+Then finally I checked the brief again and checked if i had everything that i needed. Then i did some final testing before i uploaded, and done.
